@@ -17,7 +17,7 @@ pub fn handle_sonar(distance: Arc<Mutex<f32>>) {
         let _ = port.read_exact(&mut start);
 
         if start[0] == START {
-            let _ = port.read(&mut buffer);
+            let _ = port.read_exact(&mut buffer);
             let distance_mm: u16 = u16::from_be_bytes([buffer[0], buffer[1]]);
 
             // checksum
