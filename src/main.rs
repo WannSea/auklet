@@ -28,7 +28,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let rotation_clone = rotation.clone();
     let gyro_clone = rotation.clone();
     thread::spawn(move || {
-        handle_imu(Arc::clone(&rotation_clone), Arc::clone(&gyro_clone));
+        handle_imu(rotation_clone, gyro_clone);
     });
 
 

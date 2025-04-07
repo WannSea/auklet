@@ -55,6 +55,7 @@ pub fn handle_receiver(setpoint: Arc<Mutex<State>>) {
                     }
                 }
             }
+            Err(e) => println!("{:?}",e),
         }
     }
 }
