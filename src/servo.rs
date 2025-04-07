@@ -10,6 +10,9 @@ pub struct Servo {
 }
 
 impl Servo {
+    /// Creates a new Servo on a rppal PWM Channel.
+    /// trim and the angle limits are in degress
+    /// the limits are applied before trim
     pub fn new(
         channel: Channel,
         trim: f32,
@@ -25,16 +28,13 @@ impl Servo {
         })
     }
 
-    /// Sets the servo angle in degrees (0–180)
+    /// Sets the servo angle in rad
     pub fn set_angle(&mut self, angle_rad: f32) -> Result<(), Box<dyn Error>> {
-        // Apply trim offset
-        let adjusted_angle = angle_rad / PI * 180.0 + self.trim;
-
-        // Clamp the angle within the limits
-        let clamped_angle = adjusted_angle.clamp(self.min_angle, self.max_angle);
+        // apply limits and trim
+        let angle = (angle_rad / PI * 180.0).clamp(self.min_angle, self.max_angle) + self.trim;
 
         // Calculate pulse width (1ms–2ms for 0–180°)
-        let pulse_ms = 1.0 + (clamped_angle / 180.0) * 1.0;
+        let pulse_ms = 1.0 + (angle / 180.0) * 1.0;
         let duty_cycle = pulse_ms / 20.0; // 20ms period for 50Hz
 
         // Set the duty cycle to control the servo
