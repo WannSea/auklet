@@ -7,7 +7,7 @@ edition = "2021"
 ahrs = "0.7.0"
 nalgebra = "0.33.2"
 pid = "4.1.0"
-bno085 = { git = "ssh://git@github.com/WannSea/bno085.git" }
+bno085 = { git = "https://git@github.com/WannSea/bno085.git" }
 rppal = { version = "0.22.1", features = ["hal"] }
 parse_rc_ibus = "0.2.0"
 serialport = "4.7.1"

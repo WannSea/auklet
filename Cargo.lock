@@ -67,7 +67,7 @@ checksum = "5c8214115b7bf84099f1309324e63141d4c5d7cc26862f97a0a857dbefe165bd"
 [[package]]
 name = "bno085"
 version = "0.1.0"
-source = "git+ssh://git@github.com/WannSea/bno085.git#be8d8830ab35fbebf9442e5b1f0bb7710870da31"
+source = "git+https://git@github.com/WannSea/bno085.git#be8d8830ab35fbebf9442e5b1f0bb7710870da31"
 dependencies = [
  "async-trait",
  "embedded-hal 1.0.0",
