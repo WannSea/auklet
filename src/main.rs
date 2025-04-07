@@ -10,12 +10,11 @@ use receiver::handle_receiver;
 use servo::Servo;
 use sonar::handle_sonar;
 
-use std::error::Error;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, sleep};
 use std::time::{Duration, SystemTime};
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> ! {
     let mut controller = FlightController::new();
 
     let rotation: Arc<Mutex<Vec<f32>>> = Arc::new(Mutex::new(vec![0.0, 0.0, 0.0]));
@@ -44,10 +43,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         handle_receiver(setpoint_clone);
     });
 
-    let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm0, 0.0, -15.0, 15.0)?;
-    let mut starboard_servo = Servo::new(rppal::pwm::Channel::Pwm1, 0.0, -15.0, 15.0)?;
-    let mut aft_servo = Servo::new(rppal::pwm::Channel::Pwm2, 0.0, -15.0, 15.0)?;
-    let mut rudder_servo = Servo::new(rppal::pwm::Channel::Pwm3, 0.0, -30.0, 30.0)?;
+    let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm0, 0.0, -15.0, 15.0);
+    let mut starboard_servo = Servo::new(rppal::pwm::Channel::Pwm1, 0.0, -15.0, 15.0);
+    let mut aft_servo = Servo::new(rppal::pwm::Channel::Pwm2, 0.0, -15.0, 15.0);
+    let mut rudder_servo = Servo::new(rppal::pwm::Channel::Pwm3, 0.0, -30.0, 30.0);
 
     let control_rate = Duration::from_millis(20);
     loop {
@@ -65,10 +64,10 @@ fn main() -> Result<(), Box<dyn Error>> {
                 control_rate.as_secs_f32(),
             );
 
-            port_servo.set_angle(action.port)?;
-            starboard_servo.set_angle(action.starboard)?;
-            aft_servo.set_angle(action.aft)?;
-            rudder_servo.set_angle(action.rudder)?;
+            port_servo.set_angle(action.port);
+            starboard_servo.set_angle(action.starboard);
+            aft_servo.set_angle(action.aft);
+            rudder_servo.set_angle(action.rudder);
         }
         sleep(control_rate - SystemTime::now().duration_since(start).unwrap());
     }
