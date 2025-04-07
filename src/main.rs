@@ -2,11 +2,13 @@ mod control;
 mod imu;
 mod receiver;
 mod servo;
+mod sonar;
 
 use control::{FlightController, State};
 use imu::handle_imu;
-use servo::Servo;
 use receiver::handle_receiver;
+use servo::Servo;
+use sonar::handle_sonar;
 
 use std::error::Error;
 use std::sync::{Arc, Mutex};
@@ -18,6 +20,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let rotation: Arc<Mutex<Vec<f32>>> = Arc::new(Mutex::new(vec![0.0, 0.0, 0.0]));
     let gyro: Arc<Mutex<Vec<f32>>> = Arc::new(Mutex::new(vec![0.0, 0.0, 0.0]));
+    let altitude: Arc<Mutex<f32>> = Arc::new(Mutex::new(0.0));
     let setpoint: Arc<Mutex<State>> = Arc::new(Mutex::new(State {
         roll: 0.0,
         pitch: 0.0,
@@ -31,12 +34,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         handle_imu(rotation_clone, gyro_clone);
     });
 
+    let altitude_clone = altitude.clone();
+    thread::spawn(move || {
+        handle_sonar(altitude_clone);
+    });
 
     let setpoint_clone = setpoint.clone();
     thread::spawn(move || {
-       handle_receiver(setpoint_clone); 
+        handle_receiver(setpoint_clone);
     });
-
 
     let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm0, 0.0, -15.0, 15.0)?;
     let mut starboard_servo = Servo::new(rppal::pwm::Channel::Pwm1, 0.0, -15.0, 15.0)?;
@@ -51,10 +57,13 @@ fn main() -> Result<(), Box<dyn Error>> {
                 roll: rotation.lock().unwrap().clone()[0],
                 pitch: rotation.lock().unwrap().clone()[1],
                 yaw_rate: gyro.lock().unwrap().clone()[2],
-                altitude: 0.0,
+                altitude: altitude.lock().unwrap().clone(),
             };
-            let action =
-                controller.update_controller(*setpoint.lock().unwrap(), measurement, control_rate.as_secs_f32());
+            let action = controller.update_controller(
+                *setpoint.lock().unwrap(),
+                measurement,
+                control_rate.as_secs_f32(),
+            );
 
             port_servo.set_angle(action.port)?;
             starboard_servo.set_angle(action.starboard)?;
