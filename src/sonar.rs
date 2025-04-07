@@ -5,7 +5,7 @@ use std::time::Duration;
 const START: u8 = 0xFF;
 
 pub fn handle_sonar(distance: Arc<Mutex<f32>>) {
-    let mut port = serialport::new("/dev/serial1", 115_200)
+    let mut port = serialport::new("/dev/ttyAMA1", 115_200)
         .timeout(Duration::from_millis(14))
         .open()
         .expect("Failed to open port");
