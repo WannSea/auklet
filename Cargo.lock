@@ -41,7 +41,6 @@ dependencies = [
  "bno085",
  "nalgebra",
  "parse_rc_ibus",
- "pid",
  "rppal",
  "serialport",
 ]
@@ -300,15 +299,6 @@ name = "paste"
 version = "1.0.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
-
-[[package]]
-name = "pid"
-version = "4.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "40484d96cf73a1d368158471da7f5054ab6c0484404b72aea546296f5b91435b"
-dependencies = [
- "num-traits",
-]
 
 [[package]]
 name = "pkg-config"

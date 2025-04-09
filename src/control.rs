@@ -50,6 +50,7 @@ impl<const D: usize> MimoPid<D> {
     }
 }
 
+#[derive(Debug)]
 pub struct ControlAction {
     pub port: f32,
     pub starboard: f32,
@@ -93,8 +94,10 @@ pub struct FlightController {
 impl FlightController {
     pub fn new() -> Self {
         Self {
+        //  (roll, pitch, yaw, altitude) to the ouputs
+
             pid: MimoPid::new(
-                vector![0.3, 3.0, 0.3, 0.2],
+                vector![0.6, 3.0, 0.3, 0.75],
                 vector![0.0, 0.0, 0.0, 0.0],
                 vector![0.0, 0.0, 0.0, 0.0],
                 vector![25.0, 25.0, 25.0, 25.0],

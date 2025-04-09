@@ -6,11 +6,13 @@ use bno085::{
 };
 use std::sync::{Arc, Mutex};
 
-pub fn handle_imu(rotation: Arc<Mutex<Vec<f32>>>, gyro: Arc<Mutex<Vec<f32>>>) {
+use nalgebra::geometry::{Quaternion, UnitQuaternion};
+
+pub fn handle_imu(rotation: Arc<Mutex<[f32; 3]>>, gyro: Arc<Mutex<[f32; 3]>>) {
     let rpi_interface = rppal::i2c::I2c::new().unwrap();
     let interface = I2CInterface::new(rpi_interface);
 
-    let interval = 10;
+    let interval = 100;
 
     let mut driver = BnoDriver::new(interface);
     driver.setup();
@@ -31,17 +33,24 @@ pub fn handle_imu(rotation: Arc<Mutex<Vec<f32>>>, gyro: Arc<Mutex<Vec<f32>>>) {
                             .unwrap();
                     }
                     ChannelExecutableData::Unknown(ced) => {
-                        println!("CED {:?}", ced);
+                        //println!("CED {:?}", ced);
                     }
                 },
                 BnoPacket::SensorReports(reports) => {
                     for report in reports {
                         match report {
                             SensorReportData::Rotation(d) => {
-                                *rotation.lock().unwrap() = d.get_vec()
+                                 *rotation.lock().unwrap() =
+                                     UnitQuaternion::from_quaternion(Quaternion::new(
+                                         d.values[3],
+                                         d.values[0],
+                                         d.values[1],
+                                         d.values[2],
+                                     ))
+                                     .to_euler_angles().into();
                             }
                             SensorReportData::GyroCalibrated(d) => {
-                                *gyro.lock().unwrap() = d.get_vec()
+                                *gyro.lock().unwrap() = d.values;
                             }
                             d => {
                                 print!("Unknown Sensor Data {:?}", d);
@@ -58,7 +67,7 @@ pub fn handle_imu(rotation: Arc<Mutex<Vec<f32>>>, gyro: Arc<Mutex<Vec<f32>>>) {
                     bno085::bno_driver::DriverError::NoDataAvailable => { /* Nothing to do, can happen due to sleep/clock drift */
                     }
                     e => {
-                        print!("BNO Driver Error {:?}", e);
+                        //print!("BNO Driver Error {:?}", e);
                     }
                 }
             }

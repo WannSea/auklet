@@ -13,7 +13,7 @@ const MAX_YAW_RATE: f32 = 90.0 / 180.0 * PI;
 const IBUS_HEADER: [u8; 2] = [0x20, 0x40];
 
 pub fn handle_receiver(setpoint: Arc<Mutex<State>>) {
-    let mut port = serialport::new("/dev/ttyACM0", 115_200)
+    let mut port = serialport::new("/dev/ttyAMA1", 115_200)
         .timeout(Duration::from_millis(14))
         .open()
         .expect("Failed to open port");
