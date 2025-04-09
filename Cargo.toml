@@ -12,5 +12,7 @@ bno085 = { git = "https://git@github.com/WannSea/bno085.git" }
 rppal = { version = "0.22.1", features = ["hal"] }
 parse_rc_ibus = "0.2.0"
 serialport = "4.7.1"
+ureq = "3.0.10"
+chrono = "0.4.40"
 
 
