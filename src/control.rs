@@ -94,10 +94,9 @@ pub struct FlightController {
 impl FlightController {
     pub fn new() -> Self {
         Self {
-        //  (roll, pitch, yaw, altitude) to the ouputs
-
+            //  (roll, pitch, yaw, altitude) to the ouputs
             pid: MimoPid::new(
-                vector![0.6, 3.0, 0.3, 0.75],
+                vector![0.6, 3.0, 0.3, 1.0],
                 vector![0.0, 0.0, 0.0, 0.0],
                 vector![0.0, 0.0, 0.0, 0.0],
                 vector![25.0, 25.0, 25.0, 25.0],

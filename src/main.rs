@@ -18,18 +18,6 @@ use std::time::{Duration, SystemTime};
 fn main() -> () {
     println!("HELLO");
 
-    // let pwm = Pwm::with_pwmchip(0, 2).unwrap();
-    // pwm.set_pulse_width(Duration::from_micros(0)).unwrap();
-    // pwm.set_period(Duration::from_micros(2500)).unwrap();
-    // pwm.set_pulse_width(Duration::from_micros(2500)).unwrap();
-    // dbg!(pwm.duty_cycle().unwrap());
-    // pwm.set_polarity(rppal::pwm::Polarity::Normal).unwrap();
-    // pwm.enable().unwrap();
-    // return;
-
-    
-
-
     let mut controller = FlightController::new();
 
     let rotation: Arc<Mutex<[f32; 3]>> = Arc::new(Mutex::new([0.0; 3]));
@@ -50,7 +38,7 @@ fn main() -> () {
 
     let altitude_clone = altitude.clone();
     thread::spawn(move || {
-        //handle_sonar(altitude_clone);
+        handle_sonar(altitude_clone);
     });
 
     let setpoint_clone = setpoint.clone();
@@ -58,13 +46,12 @@ fn main() -> () {
         handle_receiver(setpoint_clone);
     });
 
- let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm2, 0.0, -15.0, 15.0);
- let mut starboard_servo = Servo::new(rppal::pwm::Channel::Pwm0, 0.0, -15.0, 15.0);
- let mut aft_servo = Servo::new(rppal::pwm::Channel::Pwm1, 0.0, -15.0, 15.0);
- let mut rudder_servo = Servo::new(rppal::pwm::Channel::Pwm3, 0.0, -135.0, 135.0);
+    let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm2, 0.0, -10.0, 10.0);
+    let mut starboard_servo = Servo::new(rppal::pwm::Channel::Pwm0, 0.0, -10.0, 10.0);
+    let mut aft_servo = Servo::new(rppal::pwm::Channel::Pwm1, 0.0, -10.0, 10.0);
+    let mut rudder_servo = Servo::new(rppal::pwm::Channel::Pwm3, 0.0, -135.0, 135.0);
 
-
-    let control_rate = Duration::from_millis(20);
+    let control_rate = Duration::from_millis(10);
     loop {
         let start = SystemTime::now();
         {
@@ -83,12 +70,17 @@ fn main() -> () {
 
             dbg!(&action);
             dbg!(measurement);
+            dbg!(&setpoint);
 
             port_servo.set_angle(action.port);
             starboard_servo.set_angle(action.starboard);
             aft_servo.set_angle(action.aft);
             rudder_servo.set_angle(action.rudder * 3.0);
         }
-        sleep(control_rate - SystemTime::now().duration_since(start).unwrap());
+
+        match control_rate.checked_sub(SystemTime::now().duration_since(start).unwrap()) {
+            Some(sleep_time) => sleep(sleep_time),
+            None => println!("Wir sind am Arsch!"),
+        }
     }
 }

@@ -8,7 +8,7 @@ use serialport;
 
 const MAX_ROLL: f32 = 30.0 / 180.0 * PI;
 const MAX_PITCH: f32 = 20.0 / 180.0 * PI;
-const MAX_YAW_RATE: f32 = 90.0 / 180.0 * PI;
+const MAX_YAW_RATE: f32 = 180.0 / 180.0 * PI;
 
 const IBUS_HEADER: [u8; 2] = [0x20, 0x40];
 
@@ -27,13 +27,15 @@ pub fn handle_receiver(setpoint: Arc<Mutex<State>>) {
                 match IbusPacket::try_from_bytes(&buffer) {
                     Ok(packet) => {
                         // get channels and map from -1 to 1
-                        let channels: [f32; 14] =
-                            packet.get_all_channels().map(|c| (c as f32 - 1500.0) / 500.0);
+                        let channels: [f32; 14] = packet
+                            .get_all_channels()
+                            .map(|c| (c as f32 - 1500.0) / 500.0);
+
                         *setpoint.lock().unwrap() = State {
                             roll: channels[0] * MAX_ROLL,
                             pitch: channels[1] * MAX_PITCH,
                             yaw_rate: channels[3] * MAX_YAW_RATE,
-                            altitude: 30.0,
+                            altitude: 0.4,
                         }
                     }
                     Err(e) => match e {

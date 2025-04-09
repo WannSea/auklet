@@ -40,14 +40,15 @@ pub fn handle_imu(rotation: Arc<Mutex<[f32; 3]>>, gyro: Arc<Mutex<[f32; 3]>>) {
                     for report in reports {
                         match report {
                             SensorReportData::Rotation(d) => {
-                                 *rotation.lock().unwrap() =
-                                     UnitQuaternion::from_quaternion(Quaternion::new(
-                                         d.values[3],
-                                         d.values[0],
-                                         d.values[1],
-                                         d.values[2],
-                                     ))
-                                     .to_euler_angles().into();
+                                *rotation.lock().unwrap() =
+                                    UnitQuaternion::from_quaternion(Quaternion::new(
+                                        d.values[3],
+                                        d.values[0],
+                                        d.values[1],
+                                        d.values[2],
+                                    ))
+                                    .to_euler_angles()
+                                    .into();
                             }
                             SensorReportData::GyroCalibrated(d) => {
                                 *gyro.lock().unwrap() = d.values;

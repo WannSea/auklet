@@ -16,12 +16,11 @@ pub fn handle_sonar(distance: Arc<Mutex<f32>>) {
         let _ = port.read_exact(&mut buffer);
 
         if buffer[0] == START {
-
             let distance_mm: u16 = u16::from_be_bytes([buffer[1], buffer[2]]);
 
             // dbg!(buffer);
             //dbg!(distance_mm);
-             *distance.lock().unwrap() = distance_mm as f32 / 1000.0;
+            *distance.lock().unwrap() = distance_mm as f32 / 1000.0;
             // checksum
             // ToDo: fix
             // if buffer[1] + buffer[2] != buffer[3] {
@@ -29,10 +28,9 @@ pub fn handle_sonar(distance: Arc<Mutex<f32>>) {
             // } else {
             //     *distance.lock().unwrap() = distance_mm as f32 / 1000.0;
             // }
-        }
-        else {
-        let mut null = [0u8;0];
-        let _ = port.read_exact(&mut null);
+        } else {
+            let mut null = [0u8; 0];
+            let _ = port.read_exact(&mut null);
         }
     }
 }
