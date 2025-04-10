@@ -58,8 +58,16 @@ fn main() -> () {
         handle_receiver(setpoint_clone);
     });
 
-    influx_log(setpoint.clone(), Duration::from_millis(500));
-    influx_log(measurement.clone(), Duration::from_millis(500));
+    influx_log(
+        setpoint.clone(),
+        "setpoint".to_string(),
+        Duration::from_millis(500),
+    );
+    influx_log(
+        measurement.clone(),
+        "measurement".to_string(),
+        Duration::from_millis(500),
+    );
 
     let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm2, 0.0, -10.0, 10.0);
     let mut starboard_servo = Servo::new(rppal::pwm::Channel::Pwm0, 0.0, -10.0, 10.0);

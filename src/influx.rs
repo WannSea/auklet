@@ -1,4 +1,5 @@
 use chrono::Utc;
+use std::env;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, sleep};
 use std::time::Duration;
@@ -14,43 +15,47 @@ pub trait Log: Send + Sync + 'static {
     fn measurements(&self) -> Vec<Measurement>;
 
     /// Generates InfluxDB line protocol strings
-    fn to_line_protocol(&self) -> Vec<String> {
-        let timestamp = Utc::now().timestamp_nanos();
-        self.measurements()
+    fn to_line_protocol(&self, measurment: &String) -> String {
+        let timestamp = Utc::now().timestamp_nanos_opt().unwrap();
+        let data: String = self
+            .measurements()
             .into_iter()
-            .map(|m| format!("{} value={} {}", m.name, m.value, timestamp))
-            .collect()
+            .map(|m| format!("{}={}", m.name, m.value))
+            .collect();
+        format!("{},{} {}", measurment, data, timestamp)
     }
 }
 
-pub fn influx_log<T: Log>(shared: Arc<Mutex<T>>, interval: Duration) {
-    thread::spawn(move || {
-        let influx_url = "http://localhost:8086/write?db=example_db";
+pub fn influx_log<T: Log>(shared: Arc<Mutex<T>>, measurement: String, interval: Duration) {
+    let influx_url = env::var("INFLUX_URL").expect("no url provided");
+    let influx_bucket = env::var("INFLUX_BUCKET").expect("no bucket provided");
+    let influx_token = env::var("INFLUX_TOKEN").expect("no token provided");
 
-        loop {
-            let lines = {
-                let data = shared.lock().unwrap();
-                data.to_line_protocol()
-            };
+    let url = format!("{influx_url}/api/v2/write?org=wannsea&bucket={influx_bucket}&precision=ns");
 
-            for line in lines {
-                let response = ureq::post(influx_url)
-                    .header("Content-Type", "text/plain")
-                    .send(&line);
+    thread::spawn(move || loop {
+        let line = {
+            let data = shared.lock().unwrap();
+            data.to_line_protocol(&measurement)
+        };
 
-                match response {
-                    Ok(resp) if resp.status() == 204 => {
-                        println!("[Influx] Logged: {}", line);
-                    }
-                    Ok(resp) => {
-                        eprintln!("[Influx] Error {}: {}", resp.status(), line);
-                    }
-                    Err(e) => {
-                        eprintln!("[Influx] Network error: {:?}", e);
-                    }
-                }
+        let response = ureq::post(&url)
+            .header("Authorization", format!("Token {influx_token}"))
+            .header("Content-Type", "text/plain: charset=utf-8")
+            .header("Accept", "application/json")
+            .send(&line);
+
+        match response {
+            Ok(resp) if resp.status() == 204 => {
+                println!("[Influx] Logged: {}", line);
             }
-            sleep(interval);
+            Ok(resp) => {
+                eprintln!("[Influx] Error {}: {}", resp.status(), line);
+            }
+            Err(e) => {
+                eprintln!("[Influx] Network error: {:?}", e);
+            }
         }
+        sleep(interval);
     });
 }
