@@ -2,9 +2,11 @@ use serialport;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
+use crate::control::State;
+
 const START: u8 = 0xFF;
 
-pub fn handle_sonar(distance: Arc<Mutex<f32>>) {
+pub fn handle_sonar(distance: Arc<Mutex<State>>) {
     let mut port = serialport::new("/dev/ttyAMA2", 9600)
         .timeout(Duration::from_millis(30))
         .open()
@@ -20,7 +22,7 @@ pub fn handle_sonar(distance: Arc<Mutex<f32>>) {
 
             // dbg!(buffer);
             //dbg!(distance_mm);
-            *distance.lock().unwrap() = distance_mm as f32 / 1000.0;
+            distance.lock().unwrap().altitude = distance_mm as f32 / 1000.0;
             // checksum
             // ToDo: fix
             // if buffer[1] + buffer[2] != buffer[3] {

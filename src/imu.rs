@@ -8,7 +8,9 @@ use std::sync::{Arc, Mutex};
 
 use nalgebra::geometry::{Quaternion, UnitQuaternion};
 
-pub fn handle_imu(rotation: Arc<Mutex<[f32; 3]>>, gyro: Arc<Mutex<[f32; 3]>>) {
+use crate::control::State;
+
+pub fn handle_imu(measurement: Arc<Mutex<State>>) {
     let rpi_interface = rppal::i2c::I2c::new().unwrap();
     let interface = I2CInterface::new(rpi_interface);
 
@@ -40,18 +42,22 @@ pub fn handle_imu(rotation: Arc<Mutex<[f32; 3]>>, gyro: Arc<Mutex<[f32; 3]>>) {
                     for report in reports {
                         match report {
                             SensorReportData::Rotation(d) => {
-                                *rotation.lock().unwrap() =
+                                let euler_angles =
                                     UnitQuaternion::from_quaternion(Quaternion::new(
                                         d.values[3],
                                         d.values[0],
                                         d.values[1],
                                         d.values[2],
                                     ))
-                                    .to_euler_angles()
-                                    .into();
+                                    .euler_angles();
+                                {
+                                    let mut unlocked = measurement.lock().unwrap();
+                                    unlocked.roll = euler_angles.0;
+                                    unlocked.roll = euler_angles.1;
+                                }
                             }
                             SensorReportData::GyroCalibrated(d) => {
-                                *gyro.lock().unwrap() = d.values;
+                                measurement.lock().unwrap().yaw_rate = d.values[2];
                             }
                             d => {
                                 print!("Unknown Sensor Data {:?}", d);

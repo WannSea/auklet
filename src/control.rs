@@ -1,5 +1,7 @@
 use nalgebra::{vector, Matrix4, SVector};
 
+use crate::influx::{Log, Measurement};
+
 struct MimoPid<const D: usize> {
     p: SVector<f32, D>,
     i: SVector<f32, D>,
@@ -79,6 +81,29 @@ pub struct State {
     pub pitch: f32,
     pub yaw_rate: f32,
     pub altitude: f32,
+}
+
+impl Log for State {
+    fn measurements(&self) -> Vec<crate::influx::Measurement> {
+        vec![
+            Measurement {
+                name: "Roll",
+                value: self.roll,
+            },
+            Measurement {
+                name: "Pitch",
+                value: self.pitch,
+            },
+            Measurement {
+                name: "Yaw_Rate",
+                value: self.yaw_rate,
+            },
+            Measurement {
+                name: "altitude",
+                value: self.altitude,
+            },
+        ]
+    }
 }
 
 impl From<State> for SVector<f32, 4> {
