@@ -21,7 +21,8 @@ const LOG_RATE: Duration = Duration::from_millis(500); // delay between logs
 fn main() -> () {
     println!("HELLO");
 
-    let mut controller = FlightController::new();
+    let yaml_str = std::fs::read_to_string("config.yaml").unwrap();
+    let mut controller: FlightController = serde_yaml::from_str(&yaml_str).unwrap();
 
     let setpoint: Arc<Mutex<State>> = Arc::new(Mutex::new(State {
         roll: 0.0,
