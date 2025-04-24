@@ -10,7 +10,7 @@ const MAX_ROLL: f32 = 30.0 / 180.0 * PI;
 const MAX_PITCH: f32 = 20.0 / 180.0 * PI;
 const MAX_YAW_RATE: f32 = 180.0 / 180.0 * PI;
 
-const IBUS_HEADER: [u8; 2] = [0x20, 0x40];
+// const IBUS_HEADER: [u8; 2] = [0x20, 0x40];
 
 pub fn handle_receiver(setpoint: Arc<Mutex<State>>) {
     let mut port = serialport::new("/dev/ttyAMA1", 115_200)
