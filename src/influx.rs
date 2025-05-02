@@ -21,8 +21,9 @@ pub trait Log: Send + Sync + 'static {
             .measurements()
             .into_iter()
             .map(|m| format!("{}={}", m.name, m.value))
-            .collect();
-        format!("{},{} {}", measurment, data, timestamp)
+            .collect::<Vec<String>>()
+            .join(",");
+        format!("{} {} {}", measurment, data, timestamp)
     }
 }
 
@@ -41,7 +42,7 @@ pub fn influx_log<T: Log>(shared: Arc<Mutex<T>>, measurement: String, interval: 
 
         let response = ureq::post(&url)
             .header("Authorization", format!("Token {influx_token}"))
-            .header("Content-Type", "text/plain: charset=utf-8")
+            .header("Content-Type", "text/plain; charset=utf-8")
             .header("Accept", "application/json")
             .send(&line);
 
@@ -50,10 +51,10 @@ pub fn influx_log<T: Log>(shared: Arc<Mutex<T>>, measurement: String, interval: 
                 println!("[Influx] Logged: {}", line);
             }
             Ok(resp) => {
-                eprintln!("[Influx] Error {}: {}", resp.status(), line);
+                eprintln!("[Influx] Error {}: {} \n url:{}", resp.status(), line, url);
             }
             Err(e) => {
-                eprintln!("[Influx] Network error: {:?}", e);
+                eprintln!("[Influx] Network error: {:?} \n url:{} \n line:{}", e, url, line);
             }
         }
         sleep(interval);
