@@ -10,6 +10,12 @@ use nalgebra::geometry::{Quaternion, UnitQuaternion};
 
 use crate::control::State;
 
+#[derive(Clone, Copy)]
+struct Attitude {
+    roll: f32,
+    pitch: f32,
+}
+
 pub fn handle_imu(measurement: Arc<Mutex<State>>) {
     let rpi_interface = rppal::i2c::I2c::new().unwrap();
     let interface = I2CInterface::new(rpi_interface);
@@ -19,6 +25,8 @@ pub fn handle_imu(measurement: Arc<Mutex<State>>) {
     let mut driver = BnoDriver::new(interface);
     driver.setup();
     driver.soft_reset().unwrap();
+
+    let mut offset: Option<Attitude> = None;
 
     loop {
         match driver.receive_packet() {
@@ -50,11 +58,20 @@ pub fn handle_imu(measurement: Arc<Mutex<State>>) {
                                         d.values[2],
                                     ))
                                     .euler_angles();
-                                {
-                                    let mut unlocked = measurement.lock().unwrap();
-                                    unlocked.roll = euler_angles.0;
-                                    unlocked.pitch = euler_angles.1;
-                                }
+                                match offset {
+                                    None => {
+                                        offset = Some(Attitude {
+                                            roll: euler_angles.0,
+                                            pitch: euler_angles.1,
+                                        })
+                                    }
+                                    Some(offset) => {
+                                        let mut unlocked = measurement.lock().unwrap();
+                                        unlocked.roll = euler_angles.0 - offset.roll;
+                                        unlocked.pitch = euler_angles.1 - offset.pitch;
+                                    }
+                                };
+                                {}
                             }
                             SensorReportData::GyroCalibrated(d) => {
                                 measurement.lock().unwrap().yaw_rate = d.values[2];
