@@ -53,7 +53,7 @@ pub fn handle_imu(measurement: Arc<Mutex<State>>) {
                                 {
                                     let mut unlocked = measurement.lock().unwrap();
                                     unlocked.roll = euler_angles.0;
-                                    unlocked.roll = euler_angles.1;
+                                    unlocked.pitch = euler_angles.1;
                                 }
                             }
                             SensorReportData::GyroCalibrated(d) => {
