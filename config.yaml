@@ -1,5 +1,5 @@
 roll:
-  p: 0.6
+  p: 1.0
   i: 0.0
   d: 0.0
   i_limit: 25.0
@@ -17,15 +17,15 @@ yaw:
   i_limit: 25.0
 
 altitude:
-  p: 1.0
-  i: 0.0
+  p: 2.0
+  i: 0.1
   d: 0.0
   i_limit: 25.0
 
 # Mix matrix that maps control outputs to actuators
 mix_matrix:
 # roll, pitch, yaw, altitude
-  - [ 1.0,  0.4,  0.0, -1.0]  # Port 
-  - [-1.0,  0.4,  0.0, -1.0]  # Starboard
-  - [ 0.0, -1.0,  0.0, -1.0]  # Aft
+  - [ 1.0, -0.4,  0.0, -1.0]  # Port 
+  - [-1.0, -0.4,  0.0, -1.0]  # Starboard
+  - [ 0.0,  1.0,  0.0, -1.0]  # Aft
   - [ 0.0,  0.0,  1.0,  0.0]  # Rudder
