@@ -34,7 +34,7 @@ pub fn handle_imu(measurement: Arc<Mutex<State>>) {
                             .enable_report(SENSOR_REPORTID_GYRO_CALIBRATED, interval, interval - 1)
                             .unwrap();
                     }
-                    ChannelExecutableData::Unknown(ced) => {
+                    ChannelExecutableData::Unknown(_ced) => {
                         //println!("CED {:?}", ced);
                     }
                 },
@@ -73,7 +73,7 @@ pub fn handle_imu(measurement: Arc<Mutex<State>>) {
                 match err {
                     bno085::bno_driver::DriverError::NoDataAvailable => { /* Nothing to do, can happen due to sleep/clock drift */
                     }
-                    e => {
+                    _e => {
                         //print!("BNO Driver Error {:?}", e);
                     }
                 }

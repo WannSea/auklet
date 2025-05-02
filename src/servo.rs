@@ -1,4 +1,4 @@
-use rppal::pwm::{Channel, Polarity, Pwm};
+use rppal::pwm::{Channel, Pwm};
 use std::{
     f32::{consts::PI, INFINITY},
     thread::sleep,
