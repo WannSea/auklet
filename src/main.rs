@@ -12,6 +12,7 @@ use receiver::handle_receiver;
 use servo::Servo;
 use sonar::handle_sonar;
 
+use std::env;
 use std::sync::{Arc, Mutex};
 use std::thread::{self, sleep};
 use std::time::{Duration, SystemTime};
@@ -19,9 +20,11 @@ use std::time::{Duration, SystemTime};
 const LOG_RATE: Duration = Duration::from_millis(500); // delay between logs
 
 fn main() -> () {
-    println!("HELLO");
-
-    let yaml_str = std::fs::read_to_string("config.yaml").unwrap();
+    let yaml_path = match env::var("CONFIG_PATH") {
+        Ok(path) => path,
+        Err(_) => String::from("config.yaml"),
+    };
+    let yaml_str = std::fs::read_to_string(yaml_path).unwrap();
     let mut controller: FlightController = serde_yaml::from_str(&yaml_str).unwrap();
 
     let setpoint: Arc<Mutex<State>> = Arc::new(Mutex::new(State {
@@ -79,7 +82,6 @@ fn main() -> () {
     let mut starboard_servo = Servo::new(rppal::pwm::Channel::Pwm0, 7.0, -13.0, 13.0);
     let mut aft_servo = Servo::new(rppal::pwm::Channel::Pwm1, -13.0, -13.0, 13.0);
     let mut rudder_servo = Servo::new(rppal::pwm::Channel::Pwm3, 20.0, -135.0, 135.0);
-
 
     let control_rate = Duration::from_millis(10);
     let mut last_log = SystemTime::now();
