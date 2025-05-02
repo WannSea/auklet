@@ -1,5 +1,5 @@
 use serde::Deserialize;
-
+use std::f32::consts::PI;
 use crate::influx::{Log, Measurement};
 
 #[derive(Deserialize, Debug)]
@@ -44,19 +44,19 @@ impl Log for ControlAction {
         vec![
             Measurement {
                 name: "Port",
-                value: self.port,
+                value: self.port / PI * 180.0,
             },
             Measurement {
                 name: "Starboard",
-                value: self.starboard,
+                value: self.starboard / PI * 180.0,
             },
             Measurement {
                 name: "Aft",
-                value: self.aft,
+                value: self.aft / PI * 180.0,
             },
             Measurement {
                 name: "Rudder",
-                value: self.rudder,
+                value: self.rudder / PI * 180.0,
             },
         ]
     }
@@ -86,15 +86,15 @@ impl Log for State {
         vec![
             Measurement {
                 name: "Roll",
-                value: self.roll,
+                value: self.roll / PI * 180.0,
             },
             Measurement {
                 name: "Pitch",
-                value: self.pitch,
+                value: self.pitch / PI * 180.0,
             },
             Measurement {
                 name: "Yaw_Rate",
-                value: self.yaw_rate,
+                value: self.yaw_rate / PI * 180.0,
             },
             Measurement {
                 name: "altitude",
