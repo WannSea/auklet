@@ -70,10 +70,11 @@ fn main() -> () {
         Duration::from_millis(500),
     );
 
-    let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm2, 0.0, -10.0, 10.0);
-    let mut starboard_servo = Servo::new(rppal::pwm::Channel::Pwm0, 0.0, -10.0, 10.0);
-    let mut aft_servo = Servo::new(rppal::pwm::Channel::Pwm1, 0.0, -10.0, 10.0);
-    let mut rudder_servo = Servo::new(rppal::pwm::Channel::Pwm3, 0.0, -135.0, 135.0);
+    let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm2, 5.0, -10.0, 10.0);
+    let mut starboard_servo = Servo::new(rppal::pwm::Channel::Pwm0, 13.0, -10.0, 10.0);
+    let mut aft_servo = Servo::new(rppal::pwm::Channel::Pwm1, -13.0, -10.0, 10.0);
+    let mut rudder_servo = Servo::new(rppal::pwm::Channel::Pwm3, 20.0, -135.0, 135.0);
+
 
     let control_rate = Duration::from_millis(10);
     let mut last_log = SystemTime::now();

@@ -34,14 +34,14 @@ impl Servo {
             max_angle,
         };
 
-        let sleep_dur = Duration::from_millis(200);
-        sleep(sleep_dur);
-        s.set_angle(-INFINITY);
-        sleep(sleep_dur);
-        s.set_angle(INFINITY);
-        sleep(sleep_dur);
+//      let sleep_dur = Duration::from_millis(200);
+//      sleep(sleep_dur);
+//      s.set_angle(-INFINITY);
+//      sleep(sleep_dur);
+//      s.set_angle(INFINITY);
+//      sleep(sleep_dur);
         s.set_angle(0.0);
-        sleep(sleep_dur);
+//      sleep(sleep_dur);
 
         return s;
     }
