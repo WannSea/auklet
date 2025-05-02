@@ -69,6 +69,11 @@ fn main() -> () {
         "measurement".to_string(),
         Duration::from_millis(500),
     );
+    influx_log(
+        action.clone(),
+        "action".to_string(),
+        Duration::from_millis(500),
+    );
 
     let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm2, 5.0, -10.0, 10.0);
     let mut starboard_servo = Servo::new(rppal::pwm::Channel::Pwm0, 13.0, -10.0, 10.0);

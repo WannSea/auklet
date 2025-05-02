@@ -39,6 +39,29 @@ pub struct ControlAction {
     pub rudder: f32,
 }
 
+impl Log for ControlAction {
+    fn measurements(&self) -> Vec<crate::influx::Measurement> {
+        vec![
+            Measurement {
+                name: "Port",
+                value: self.port,
+            },
+            Measurement {
+                name: "Starboard",
+                value: self.starboard,
+            },
+            Measurement {
+                name: "Aft",
+                value: self.aft,
+            },
+            Measurement {
+                name: "Rudder",
+                value: self.rudder,
+            },
+        ]
+    }
+}
+
 impl From<[f32; 4]> for ControlAction {
     fn from(vec: [f32; 4]) -> Self {
         Self {
