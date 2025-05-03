@@ -32,7 +32,7 @@ fn main() -> () {
         Ok(path) => path,
         Err(_) => String::from("config.yaml"),
     };
-    println!("reading config: {}",yaml_path);
+    println!("reading config: {}", yaml_path);
     let yaml_str = std::fs::read_to_string(yaml_path).unwrap();
 
     let config: Configuration = serde_yaml::from_str(&yaml_str).unwrap();
@@ -96,7 +96,12 @@ fn main() -> () {
     );
 
     let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm2, config.trim.port, -13.0, 13.0);
-    let mut starboard_servo = Servo::new(rppal::pwm::Channel::Pwm0, config.trim.starboard, -13.0, 13.0);
+    let mut starboard_servo = Servo::new(
+        rppal::pwm::Channel::Pwm0,
+        config.trim.starboard,
+        -13.0,
+        13.0,
+    );
     let mut aft_servo = Servo::new(rppal::pwm::Channel::Pwm1, config.trim.aft, -13.0, 13.0);
     let mut rudder_servo = Servo::new(rppal::pwm::Channel::Pwm3, config.trim.rudder, -135.0, 135.0);
 
