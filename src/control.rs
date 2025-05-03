@@ -1,6 +1,9 @@
-use serde::Deserialize;
-use std::f32::consts::PI;
 use crate::influx::{Log, Measurement};
+use serde::Deserialize;
+use std::{
+    f32::consts::PI,
+    sync::{Arc, Mutex},
+};
 
 #[derive(Deserialize, Debug)]
 struct Pid {
@@ -73,12 +76,23 @@ impl From<[f32; 4]> for ControlAction {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Deserialize)]
 pub struct State {
     pub roll: f32,
     pub pitch: f32,
     pub yaw_rate: f32,
     pub altitude: f32,
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self {
+            roll: 0.0,
+            pitch: 0.0,
+            yaw_rate: 0.0,
+            altitude: 0.0,
+        }
+    }
 }
 
 impl Log for State {
@@ -117,6 +131,9 @@ pub struct FlightController {
     yaw: Pid,
     altitude: Pid,
     mix_matrix: [[f32; 4]; 4],
+
+    #[serde(skip_deserializing)]
+    pub current_pid: Arc<Mutex<State>>,
 }
 
 impl FlightController {
@@ -134,6 +151,7 @@ impl FlightController {
                 .altitude
                 .update(setpoint.altitude, measurement.altitude, dt),
         };
+        *self.current_pid.lock().unwrap() = pid;
 
         let mut action = [0.0; 4];
         let pid_array: [f32; 4] = pid.into();

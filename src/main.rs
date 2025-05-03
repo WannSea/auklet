@@ -88,6 +88,11 @@ fn main() -> () {
         "action".to_string(),
         Duration::from_millis(500),
     );
+    influx_log(
+        controller.current_pid.clone(),
+        "pid".to_string(),
+        Duration::from_millis(500),
+    );
 
     let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm2, config.trim.port, -13.0, 13.0);
     let mut starboard_servo = Servo::new(rppal::pwm::Channel::Pwm0, config.trim.starboard, -13.0, 13.0);
@@ -95,7 +100,6 @@ fn main() -> () {
     let mut rudder_servo = Servo::new(rppal::pwm::Channel::Pwm3, config.trim.rudder, -135.0, 135.0);
 
     let control_rate = Duration::from_millis(10);
-    let mut last_log = SystemTime::now();
     loop {
         let start = SystemTime::now();
         {
@@ -111,13 +115,6 @@ fn main() -> () {
             starboard_servo.set_angle(unlocked_action.starboard);
             aft_servo.set_angle(unlocked_action.aft);
             rudder_servo.set_angle(unlocked_action.rudder * 3.0); // the servo has a gear ratio of 3
-        }
-
-        if SystemTime::now().duration_since(last_log).unwrap() > LOG_RATE {
-            dbg!(&action);
-            dbg!(&measurement);
-            dbg!(&setpoint.lock().unwrap());
-            last_log = SystemTime::now();
         }
         match control_rate.checked_sub(SystemTime::now().duration_since(start).unwrap()) {
             Some(sleep_time) => sleep(sleep_time),
