@@ -24,6 +24,7 @@ const LOG_RATE: Duration = Duration::from_millis(500); // delay between logs
 struct Configuration {
     controller: FlightController,
     trim: ControlAction,
+    height_setpoint: f32,
 }
 
 fn main() -> () {
@@ -103,6 +104,7 @@ fn main() -> () {
     loop {
         let start = SystemTime::now();
         {
+            setpoint.lock().unwrap().altitude = config.height_setpoint;
             *action.lock().unwrap() = controller.update_controller(
                 *setpoint.lock().unwrap(),
                 *measurement.lock().unwrap(),
