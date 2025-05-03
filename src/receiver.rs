@@ -47,7 +47,7 @@ pub fn handle_receiver(setpoint: Arc<Mutex<State>>) {
                     },
                 }
             }
-            Err(e) => println!("Reveiver Error {:?}", e),
+            Err(_) => {} //println!("Reveiver Error {:?}", e),
         }
     }
 }
