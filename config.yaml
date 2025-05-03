@@ -1,31 +1,37 @@
-roll:
-  p: 1.0
-  i: 0.0
-  d: 0.0
-  i_limit: 25.0
+trim:
+  port: 0.0
+  starboard: 7.0
+  aft: -13.0
+  rudder: 20.0
+controller:
+  roll:
+    p: 1.0
+    i: 0.0
+    d: 0.0
+    i_limit: 25.0
 
-pitch:
-  p: 1.0
-  i: 0.0
-  d: 0.0
-  i_limit: 25.0
+  pitch:
+    p: 1.0
+    i: 0.0
+    d: 0.0
+    i_limit: 25.0
 
-yaw:
-  p: 0.3
-  i: 0.0
-  d: 0.0
-  i_limit: 25.0
+  yaw:
+    p: 0.3
+    i: 0.0
+    d: 0.0
+    i_limit: 25.0
 
-altitude:
-  p: 5.0
-  i: 0.0
-  d: 0.0
-  i_limit: 0.1
+  altitude:
+    p: 5.0
+    i: 0.0
+    d: 0.0
+    i_limit: 0.1
 
-# Mix matrix that maps control outputs to actuators
-mix_matrix:
-# roll, pitch, yaw, altitude
-  - [ 1.0,  0.4,  0.0, -0.7]  # Port 
-  - [-1.0,  0.4,  0.0, -0.7]  # Starboard
-  - [ 0.0, -1.0,  0.0, -1.0]  # Aft
-  - [ 0.0,  0.0,  1.0,  0.0]  # Rudder
+  # Mix matrix that maps control outputs to actuators
+  mix_matrix:
+  # roll, pitch, yaw, altitude
+    - [ 1.0,  0.4,  0.0, -0.7]  # Port 
+    - [-1.0,  0.4,  0.0, -0.7]  # Starboard
+    - [ 0.0, -1.0,  0.0, -1.0]  # Aft
+    - [ 0.0,  0.0,  1.0,  0.0]  # Rudder

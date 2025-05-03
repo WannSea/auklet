@@ -31,7 +31,7 @@ impl Pid {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize)]
 pub struct ControlAction {
     pub port: f32,
     pub starboard: f32,
