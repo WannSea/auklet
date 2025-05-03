@@ -31,6 +31,7 @@ fn main() -> () {
         Ok(path) => path,
         Err(_) => String::from("config.yaml"),
     };
+    println!("reading config: {}",yaml_path);
     let yaml_str = std::fs::read_to_string(yaml_path).unwrap();
 
     let config: Configuration = serde_yaml::from_str(&yaml_str).unwrap();
