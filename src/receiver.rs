@@ -35,7 +35,7 @@ pub fn handle_receiver(setpoint: Arc<Mutex<State>>) {
                             roll: channels[0] * MAX_ROLL,
                             pitch: channels[1] * MAX_PITCH,
                             yaw_rate: channels[3] * MAX_YAW_RATE,
-                            altitude: 0.0,
+                            altitude: 0.3,
                         }
                     }
                     Err(e) => match e {

@@ -109,7 +109,6 @@ fn main() -> () {
     loop {
         let start = SystemTime::now();
         {
-            setpoint.lock().unwrap().altitude = config.height_setpoint;
             *action.lock().unwrap() = controller.update_controller(
                 *setpoint.lock().unwrap(),
                 *measurement.lock().unwrap(),
