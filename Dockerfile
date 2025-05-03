@@ -17,5 +17,5 @@ RUN mv ./target/release/auklet ./app
 FROM debian:stable-slim AS runtime
 RUN apt-get update && apt-get install libudev-dev -y && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
-COPY --from=builder /app/app /usr/local/bin/
-ENTRYPOINT ["/usr/local/bin/app"]
+COPY --from=builder /app/app /usr/local/bin/auklet
+ENTRYPOINT ["/usr/local/bin/auklet"]
