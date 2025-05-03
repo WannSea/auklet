@@ -1,10 +1,14 @@
-FROM rust:bookworm AS builder
-WORKDIR /usr/src/auklet
-COPY . .
-RUN apt-get update
-RUN apt-get install -y libudev-dev
-RUN cargo install --path .
+FROM rust:1.83 AS builder
 
+RUN USER=root cargo new --bin app
+WORKDIR /app
+
+COPY Cargo.toml Cargo.lock ./
+RUN cargo build --release
+RUN rm src/*.rs
+COPY ./src ./src
+
+RUN cargo build --release
 
 FROM debian:bookworm-slim
 RUN apt-get update & apt-get install -y extra-runtime-dependencies & rm -rf /var/lib/apt/lists/*
