@@ -28,6 +28,7 @@ struct Configuration {
 }
 
 fn main() -> () {
+    println!("Version 0.1");
     let yaml_path = match env::var("CONFIG_PATH") {
         Ok(path) => path,
         Err(_) => String::from("config.yaml"),
