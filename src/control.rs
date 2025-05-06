@@ -30,7 +30,7 @@ impl Pid {
         let derivative = (self.last_error - error) / dt;
         let d = derivative * self.d;
 
-        p + i + d
+        (p + i + d).clamp(-1.0, 1.0)
     }
 }
 
