@@ -20,7 +20,7 @@ pub fn handle_imu(measurement: Arc<Mutex<State>>) {
     let rpi_interface = rppal::i2c::I2c::new().unwrap();
     let interface = I2CInterface::new(rpi_interface);
 
-    let interval = 16;
+    let interval = 18;
 
     let mut driver = BnoDriver::new(interface);
     driver.setup();

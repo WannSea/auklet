@@ -49,7 +49,7 @@ fn main() -> () {
         roll: 0.0,
         pitch: 0.0,
         yaw_rate: 0.0,
-        altitude: 0.0,
+        altitude: 0.2,
     }));
 
     let action: Arc<Mutex<ControlAction>> = Arc::new(Mutex::new(ControlAction {
@@ -64,10 +64,10 @@ fn main() -> () {
         handle_imu(measurement_clone);
     });
 
-    let measurement_clone2 = measurement.clone();
-    thread::spawn(move || {
-        handle_sonar(measurement_clone2);
-    });
+    // let measurement_clone2 = measurement.clone();
+    // thread::spawn(move || {
+    //     handle_sonar(measurement_clone2);
+    // });
 
     let setpoint_clone = setpoint.clone();
     thread::spawn(move || {

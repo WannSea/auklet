@@ -31,11 +31,20 @@ pub fn handle_receiver(setpoint: Arc<Mutex<State>>) {
                             .get_all_channels()
                             .map(|c| (c as f32 - 1500.0) / 500.0);
 
+                        // *setpoint.lock().unwrap() = State {
+                        //     roll: channels[0] * MAX_ROLL,
+                        //     pitch: channels[1] * MAX_PITCH,
+                        //     yaw_rate: channels[3] * MAX_YAW_RATE,
+                        //     altitude: 0.3,
+                        // }
+                        // 0 = 20
+                        // -1 = 37
+                        //dbg!(channels);
                         *setpoint.lock().unwrap() = State {
-                            roll: channels[0] * MAX_ROLL,
-                            pitch: channels[1] * MAX_PITCH,
+                            roll: 0.0,
+                            pitch: 0.0,
                             yaw_rate: channels[3] * MAX_YAW_RATE,
-                            altitude: 0.3,
+                            altitude: 0.3 + (channels[1] * -0.5),
                         }
                     }
                     Err(e) => match e {
