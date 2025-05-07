@@ -6,9 +6,9 @@ use crate::control::State;
 use parse_rc_ibus::{IbusPacket, ParsingError};
 use serialport;
 
-const MAX_ROLL: f32 = 30.0 / 180.0 * PI;
-const MAX_PITCH: f32 = 10.0 / 180.0 * PI;
-const MAX_YAW_RATE: f32 = 180.0 / 180.0 * PI;
+const MAX_ROLL: f32 = 30.0;
+const MAX_PITCH: f32 = 10.0;
+const MAX_YAW_RATE: f32 = 180.0;
 
 // const IBUS_HEADER: [u8; 2] = [0x20, 0x40];
 
