@@ -48,13 +48,16 @@ pub fn influx_log<T: Log>(shared: Arc<Mutex<T>>, measurement: String, interval: 
 
         match response {
             Ok(resp) if resp.status() == 204 => {
-                println!("[Influx] Logged: {}", line);
+                //  println!("[Influx] Logged: {}", line);
             }
             Ok(resp) => {
                 eprintln!("[Influx] Error {}: {} \n url:{}", resp.status(), line, url);
             }
             Err(e) => {
-                eprintln!("[Influx] Network error: {:?} \n url:{} \n line:{}", e, url, line);
+                eprintln!(
+                    "[Influx] Network error: {:?} \n url:{} \n line:{}",
+                    e, url, line
+                );
             }
         }
         sleep(interval);

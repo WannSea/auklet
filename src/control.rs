@@ -100,15 +100,15 @@ impl Log for State {
         vec![
             Measurement {
                 name: "Roll",
-                value: self.roll / PI * 180.0,
+                value: self.roll,
             },
             Measurement {
                 name: "Pitch",
-                value: self.pitch / PI * 180.0,
+                value: self.pitch,
             },
             Measurement {
                 name: "Yaw_Rate",
-                value: self.yaw_rate / PI * 180.0,
+                value: self.yaw_rate,
             },
             Measurement {
                 name: "altitude",
@@ -161,5 +161,23 @@ impl FlightController {
             }
         }
         action.into()
+    }
+}
+
+mod tests {
+    use super::{Pid, State};
+
+    #[test]
+    fn test_clamp() {
+        let mut pid = Pid {
+            p: 10.0,
+            i: 0.0,
+            d: 0.0,
+            i_limit: 1.0,
+            i_term: 0.0,
+            last_error: 0.0,
+        };
+
+        assert_eq!(-1.0, pid.update(0.0, 1.0, 1.0));
     }
 }

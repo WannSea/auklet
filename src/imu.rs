@@ -4,7 +4,10 @@ use bno085::{
     bno_packet::{BnoPacket, ChannelExecutableData, SensorReportData},
     interface::i2c::I2CInterface,
 };
-use std::sync::{Arc, Mutex};
+use std::{
+    f32::consts::PI,
+    sync::{Arc, Mutex},
+};
 
 use nalgebra::geometry::{Quaternion, UnitQuaternion};
 
@@ -50,7 +53,7 @@ pub fn handle_imu(measurement: Arc<Mutex<State>>) {
                     for report in reports {
                         match report {
                             SensorReportData::Rotation(d) => {
-                                let euler_angles =
+                                let euler_angles_rad =
                                     UnitQuaternion::from_quaternion(Quaternion::new(
                                         d.values[3],
                                         d.values[0],
@@ -58,6 +61,11 @@ pub fn handle_imu(measurement: Arc<Mutex<State>>) {
                                         d.values[2],
                                     ))
                                     .euler_angles();
+                                let euler_angles = (
+                                    euler_angles_rad.0 / PI * 180.0,
+                                    euler_angles_rad.1 / PI * 180.0,
+                                    euler_angles_rad.2 / PI * 180.0,
+                                );
                                 match offset {
                                     None => {
                                         offset = Some(Attitude {
@@ -74,7 +82,7 @@ pub fn handle_imu(measurement: Arc<Mutex<State>>) {
                                 {}
                             }
                             SensorReportData::GyroCalibrated(d) => {
-                                measurement.lock().unwrap().yaw_rate = d.values[2];
+                                measurement.lock().unwrap().yaw_rate = d.values[2] / PI * 180.0;
                             }
                             d => {
                                 print!("Unknown Sensor Data {:?}", d);
