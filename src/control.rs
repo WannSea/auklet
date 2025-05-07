@@ -47,19 +47,19 @@ impl Log for ControlAction {
         vec![
             Measurement {
                 name: "Port",
-                value: self.port / PI * 180.0,
+                value: self.port,
             },
             Measurement {
                 name: "Starboard",
-                value: self.starboard / PI * 180.0,
+                value: self.starboard,
             },
             Measurement {
                 name: "Aft",
-                value: self.aft / PI * 180.0,
+                value: self.aft,
             },
             Measurement {
                 name: "Rudder",
-                value: self.rudder / PI * 180.0,
+                value: self.rudder,
             },
         ]
     }

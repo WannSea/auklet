@@ -34,22 +34,22 @@ impl Servo {
             max_angle,
         };
 
-//      let sleep_dur = Duration::from_millis(200);
-//      sleep(sleep_dur);
-//      s.set_angle(-INFINITY);
-//      sleep(sleep_dur);
-//      s.set_angle(INFINITY);
-//      sleep(sleep_dur);
+        //      let sleep_dur = Duration::from_millis(200);
+        //      sleep(sleep_dur);
+        //      s.set_angle(-INFINITY);
+        //      sleep(sleep_dur);
+        //      s.set_angle(INFINITY);
+        //      sleep(sleep_dur);
         s.set_angle(0.0);
-//      sleep(sleep_dur);
+        //      sleep(sleep_dur);
 
         return s;
     }
 
-    /// Sets the servo angle in rad
-    pub fn set_angle(&mut self, angle_rad: f32) {
+    /// Sets the servo angle in grad
+    pub fn set_angle(&mut self, angle_grad: f32) {
         // apply limits and trim
-        let angle = (angle_rad / PI * 180.0).clamp(self.min_angle, self.max_angle) + self.trim;
+        let angle = angle_grad.clamp(self.min_angle, self.max_angle) + self.trim;
 
         let servo_angle = 135.0 + angle;
         let pulse_width = 500.0 + ((servo_angle / 270.0) * 2000.0);
