@@ -40,6 +40,7 @@ pub fn handle_receiver(setpoint: Arc<Mutex<State>>) {
                         } else {
                             unlocked.pitch = channels[1] * MAX_PITCH + 5.0;
                         }
+                        unlocked.altitude = channels[6] * MAX_SETPOINT + 0.3;
                     }
                     Err(e) => match e {
                         ParsingError::FailsChecksum => println!("invalid package"),
