@@ -33,7 +33,7 @@ pub fn handle_receiver(setpoint: Arc<Mutex<State>>) {
 
                         let mut unlocked = setpoint.lock().unwrap();
                         unlocked.roll = channels[0] * MAX_ROLL;
-                        unlocked.pitch = channels[1] * MAX_PITCH;
+                        unlocked.pitch = channels[1] * MAX_PITCH + 5.0;
                         unlocked.yaw_rate = channels[3] * MAX_YAW_RATE;
                     }
                     Err(e) => match e {
