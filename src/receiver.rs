@@ -9,7 +9,7 @@ use serialport;
 const MAX_ROLL: f32 = 10.0;
 const MAX_PITCH: f32 = 10.0;
 const MAX_YAW_RATE: f32 = 180.0;
-const MAX_SETPOINT: f32 = 100.0;
+const MAX_SETPOINT: f32 = 0.1;
 
 // const IBUS_HEADER: [u8; 2] = [0x20, 0x40];
 
@@ -33,12 +33,12 @@ pub fn handle_receiver(setpoint: Arc<Mutex<State>>) {
                             .map(|c| (c as f32 - 1500.0) / 500.0);
 
                         let mut unlocked = setpoint.lock().unwrap();
-                        unlocked.pitch = channels[1] * MAX_PITCH + 5.0;
+                        unlocked.roll = channels[0] * MAX_ROLL;
                         unlocked.yaw_rate = channels[3] * MAX_YAW_RATE;
-                        if channels[5] < 0.8 {
+                        if channels[4] > 0.8 {
                             unlocked.altitude = channels[1] * MAX_SETPOINT + 0.3;
                         } else {
-                            unlocked.roll = channels[0] * MAX_ROLL;
+                            unlocked.pitch = channels[1] * MAX_PITCH + 5.0;
                         }
                     }
                     Err(e) => match e {
