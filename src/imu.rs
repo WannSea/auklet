@@ -1,7 +1,5 @@
 use bno085::{
-    bno_constants::{
-        SENSOR_REPORTID_ARVR_STABILIZED_ROTATION_VECTOR, SENSOR_REPORTID_GYRO_CALIBRATED,
-    },
+    bno_constants::{SENSOR_REPORTID_GYRO_CALIBRATED, SENSOR_REPORTID_ROTATION_VECTOR},
     bno_driver::BnoDriver,
     bno_packet::{BnoPacket, ChannelExecutableData, SensorReportData},
     interface::i2c::I2CInterface,
@@ -41,11 +39,7 @@ pub fn handle_imu(measurement: Arc<Mutex<State>>) {
                         print!("Reset Complete, enabling Reports!");
                         // Enable reports after reset
                         driver
-                            .enable_report(
-                                SENSOR_REPORTID_ARVR_STABILIZED_ROTATION_VECTOR,
-                                interval,
-                                interval - 1,
-                            )
+                            .enable_report(SENSOR_REPORTID_ROTATION_VECTOR, interval, interval - 1)
                             .unwrap();
                         driver
                             .enable_report(SENSOR_REPORTID_GYRO_CALIBRATED, interval, interval - 1)
