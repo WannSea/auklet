@@ -18,13 +18,12 @@ use std::sync::{Arc, Mutex};
 use std::thread::{self, sleep};
 use std::time::{Duration, SystemTime};
 
-const LOG_RATE: Duration = Duration::from_millis(500); // delay between logs
-
 #[derive(Deserialize)]
 struct Configuration {
     controller: FlightController,
     trim: ControlAction,
     height_setpoint: f32,
+    logging_interval_ms: u64,
 }
 
 fn main() -> () {
@@ -78,22 +77,22 @@ fn main() -> () {
     influx_log(
         setpoint.clone(),
         "setpoint".to_string(),
-        Duration::from_millis(500),
+        Duration::from_millis(config.logging_interval_ms),
     );
     influx_log(
         measurement.clone(),
         "measurement".to_string(),
-        Duration::from_millis(500),
+        Duration::from_millis(config.logging_interval_ms),
     );
     influx_log(
         action.clone(),
         "action".to_string(),
-        Duration::from_millis(500),
+        Duration::from_millis(config.logging_interval_ms),
     );
     influx_log(
         controller.current_pid.clone(),
         "pid".to_string(),
-        Duration::from_millis(500),
+        Duration::from_millis(config.logging_interval_ms),
     );
 
     let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm2, config.trim.port, -13.0, 13.0);
