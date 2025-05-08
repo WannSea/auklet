@@ -31,7 +31,7 @@ pub fn handle_receiver(setpoint: Arc<Mutex<State>>) {
                             .get_all_channels()
                             .map(|c| (c as f32 - 1500.0) / 500.0);
 
-                        let mut unlocked = *setpoint.lock().unwrap();
+                        let mut unlocked = setpoint.lock().unwrap();
                         unlocked.roll = channels[0] * MAX_ROLL;
                         unlocked.pitch = channels[1] * MAX_PITCH;
                         unlocked.yaw_rate = channels[3] * MAX_YAW_RATE;
