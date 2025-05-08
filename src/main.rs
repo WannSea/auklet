@@ -44,7 +44,7 @@ fn main() -> () {
         roll: 0.0,
         pitch: 0.0,
         yaw_rate: 0.0,
-        altitude: 0.0,
+        altitude: config.height_setpoint,
     }));
     let measurement: Arc<Mutex<State>> = Arc::new(Mutex::new(State {
         roll: 0.0,

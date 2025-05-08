@@ -31,12 +31,10 @@ pub fn handle_receiver(setpoint: Arc<Mutex<State>>) {
                             .get_all_channels()
                             .map(|c| (c as f32 - 1500.0) / 500.0);
 
-                        *setpoint.lock().unwrap() = State {
-                            roll: channels[0] * MAX_ROLL,
-                            pitch: channels[1] * MAX_PITCH,
-                            yaw_rate: channels[3] * MAX_YAW_RATE,
-                            altitude: 0.3,
-                        }
+                        let mut unlocked = *setpoint.lock().unwrap();
+                        unlocked.roll = channels[0] * MAX_ROLL;
+                        unlocked.pitch = channels[1] * MAX_PITCH;
+                        unlocked.yaw_rate = channels[3] * MAX_YAW_RATE;
                     }
                     Err(e) => match e {
                         ParsingError::FailsChecksum => println!("invalid package"),
