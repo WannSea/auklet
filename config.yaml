@@ -1,18 +1,29 @@
-trim:
-  port: 0.0
+trim: # neutral trim of the servos in degrees
+  port: -8.0
   starboard: 7.0
-  aft: -13.0
+  aft: -15.0
   rudder: 20.0
-height_setpoint: 0.3
+receiver:
+  sensitivity: # sensitivity of the channels in degrees
+    roll: 10.0 # degrees
+    pitch: 10.0 # degrees
+    yaw_rate: 180.0 # degrees/s
+    altitude: 0.1 # meter
+logging_interval_ms: 250
 controller:
+  default_setpoint:
+    roll: 0.0
+    pitch: 5.0
+    yaw_rate: 0.0
+    altitude: 0.3
   roll:
-    p: 1.0
+    p: 0.04
     i: 0.0
     d: 0.0
     i_limit: 25.0
 
   pitch:
-    p: 3.0
+    p: 0.1
     i: 0.0
     d: 0.0
     i_limit: 25.0
@@ -24,15 +35,15 @@ controller:
     i_limit: 25.0
 
   altitude:
-    p: 3.0
-    i: 0.0
+    p: 4.0
+    i: 1.0
     d: 0.0
-    i_limit: 0.1
+    i_limit: 5.0
 
   # Mix matrix that maps control outputs to actuators
   mix_matrix:
   # roll, pitch, yaw, altitude
-    - [ 1.0, -0.4,  0.0, -0.7]  # Port 
-    - [-1.0, -0.4,  0.0, -0.7]  # Starboard
-    - [ 0.0,  1.0,  0.0, -1.0]  # Aft
+    - [ 15.0, 0.0,  0.0, -20.0]  # Port 
+    - [-15.0, 0.0,  0.0, -15.0]  # Starboard
+    - [ 0.0, 15.0,  0.0, -15.0]  # Aft
     - [ 0.0,  0.0,  1.0,  0.0]  # Rudder

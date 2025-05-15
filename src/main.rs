@@ -8,7 +8,7 @@ mod sonar;
 use control::{ControlAction, FlightController, State};
 use imu::handle_imu;
 use influx::influx_log;
-use receiver::handle_receiver;
+use receiver::Receiver;
 use serde::Deserialize;
 use servo::Servo;
 use sonar::handle_sonar;
@@ -21,8 +21,8 @@ use std::time::{Duration, SystemTime};
 #[derive(Deserialize)]
 struct Configuration {
     controller: FlightController,
+    receiver: Receiver,
     trim: ControlAction,
-    height_setpoint: f32,
     logging_interval_ms: u64,
 }
 
@@ -39,18 +39,10 @@ fn main() -> () {
 
     let mut controller: FlightController = config.controller;
 
-    let setpoint: Arc<Mutex<State>> = Arc::new(Mutex::new(State {
-        roll: 0.0,
-        pitch: 0.0,
-        yaw_rate: 0.0,
-        altitude: config.height_setpoint,
-    }));
-    let measurement: Arc<Mutex<State>> = Arc::new(Mutex::new(State {
-        roll: 0.0,
-        pitch: 0.0,
-        yaw_rate: 0.0,
-        altitude: 0.0,
-    }));
+    let receiver: Receiver = config.receiver;
+    receiver.run();
+
+    let measurement: Arc<Mutex<State>> = Arc::new(Mutex::new(State::default()));
 
     let action: Arc<Mutex<ControlAction>> = Arc::new(Mutex::new(ControlAction {
         port: 0.0,
@@ -69,13 +61,8 @@ fn main() -> () {
         handle_sonar(measurement_clone2);
     });
 
-    let setpoint_clone = setpoint.clone();
-    thread::spawn(move || {
-        handle_receiver(setpoint_clone);
-    });
-
     influx_log(
-        setpoint.clone(),
+        receiver.inputs.clone(),
         "setpoint".to_string(),
         Duration::from_millis(config.logging_interval_ms),
     );
@@ -109,11 +96,17 @@ fn main() -> () {
     loop {
         let start = SystemTime::now();
         {
-            *action.lock().unwrap() = controller.update_controller(
-                *setpoint.lock().unwrap(),
-                *measurement.lock().unwrap(),
-                control_rate.as_secs_f32(),
-            );
+            let inputs = receiver.get_inputs();
+            if inputs.controller_enable {
+                *action.lock().unwrap() = controller.update_controller(
+                    inputs.setpoint,
+                    *measurement.lock().unwrap(),
+                    control_rate.as_secs_f32(),
+                );
+            } else {
+                *action.lock().unwrap() = ControlAction::default();
+                controller.reset();
+            }
         }
         {
             let unlocked_action = action.lock().unwrap();

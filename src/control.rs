@@ -1,7 +1,7 @@
 use crate::influx::{Log, Measurement};
 use serde::Deserialize;
 use std::{
-    f32::consts::PI,
+    ops::Add,
     sync::{Arc, Mutex},
 };
 
@@ -40,6 +40,17 @@ pub struct ControlAction {
     pub starboard: f32,
     pub aft: f32,
     pub rudder: f32,
+}
+
+impl Default for ControlAction {
+    fn default() -> Self {
+        Self {
+            port: 0.0,
+            starboard: 0.0,
+            aft: 0.0,
+            rudder: 0.0,
+        }
+    }
 }
 
 impl Log for ControlAction {
@@ -95,6 +106,19 @@ impl Default for State {
     }
 }
 
+impl Add for State {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        Self {
+            roll: self.roll + rhs.roll,
+            pitch: self.pitch + rhs.pitch,
+            yaw_rate: self.yaw_rate + rhs.yaw_rate,
+            altitude: self.altitude + rhs.altitude,
+        }
+    }
+}
+
 impl Log for State {
     fn measurements(&self) -> Vec<crate::influx::Measurement> {
         vec![
@@ -131,6 +155,7 @@ pub struct FlightController {
     yaw: Pid,
     altitude: Pid,
     mix_matrix: [[f32; 4]; 4],
+    default_setpoint: State,
 
     #[serde(skip_deserializing)]
     pub current_pid: Arc<Mutex<State>>,
@@ -143,13 +168,20 @@ impl FlightController {
         measurement: State,
         dt: f32,
     ) -> ControlAction {
+        let absolute_setpoint = self.default_setpoint + setpoint;
         let pid = State {
-            roll: self.roll.update(setpoint.roll, measurement.roll, dt),
-            pitch: self.pitch.update(setpoint.pitch, measurement.pitch, dt),
-            yaw_rate: self.yaw.update(setpoint.yaw_rate, measurement.yaw_rate, dt),
+            roll: self
+                .roll
+                .update(absolute_setpoint.roll, measurement.roll, dt),
+            pitch: self
+                .pitch
+                .update(absolute_setpoint.pitch, measurement.pitch, dt),
+            yaw_rate: self
+                .yaw
+                .update(absolute_setpoint.yaw_rate, measurement.yaw_rate, dt),
             altitude: self
                 .altitude
-                .update(setpoint.altitude, measurement.altitude, dt),
+                .update(absolute_setpoint.altitude, measurement.altitude, dt),
         };
         *self.current_pid.lock().unwrap() = pid;
 
@@ -162,10 +194,17 @@ impl FlightController {
         }
         action.into()
     }
-}
 
+    pub fn reset(&mut self) {
+        self.roll.i_term = 0.0;
+        self.pitch.i_term = 0.0;
+        self.yaw.i_term = 0.0;
+        self.altitude.i_term = 0.0;
+    }
+}
+#[cfg(test)]
 mod tests {
-    use super::{Pid, State};
+    use super::Pid;
 
     #[test]
     fn test_clamp() {
