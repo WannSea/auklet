@@ -1,4 +1,5 @@
 mod control;
+mod helpers;
 mod imu;
 mod influx;
 mod receiver;
@@ -6,6 +7,7 @@ mod servo;
 mod sonar;
 
 use control::{ControlAction, FlightController, State};
+use helpers::RateRingBuffer;
 use imu::handle_imu;
 use influx::influx_log;
 use receiver::Receiver;
@@ -41,6 +43,8 @@ fn main() -> () {
 
     let receiver: Receiver = config.receiver;
     receiver.run();
+
+    let rate = Arc::new(Mutex::new(RateRingBuffer::new()));
 
     let measurement: Arc<Mutex<State>> = Arc::new(Mutex::new(State::default()));
 
@@ -81,6 +85,11 @@ fn main() -> () {
         "pid".to_string(),
         Duration::from_millis(config.logging_interval_ms),
     );
+    influx_log(
+        rate.clone(),
+        "pid_rate".to_string(),
+        Duration::from_millis(config.logging_interval_ms),
+    );
 
     let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm2, config.trim.port, -13.0, 13.0);
     let mut starboard_servo = Servo::new(
@@ -118,6 +127,10 @@ fn main() -> () {
         match control_rate.checked_sub(SystemTime::now().duration_since(start).unwrap()) {
             Some(sleep_time) => sleep(sleep_time),
             None => println!("Wir sind am Arsch!"),
+        }
+        {
+            let mut rate_unlocked = rate.lock().unwrap();
+            rate_unlocked.push(SystemTime::now().duration_since(start).unwrap());
         }
     }
 }
