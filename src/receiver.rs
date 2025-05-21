@@ -68,7 +68,7 @@ impl Receiver {
                                 unlocked.setpoint.pitch = channels[1] * sensitivity.pitch;
                                 unlocked.setpoint.yaw_rate = channels[3] * sensitivity.yaw_rate;
                                 unlocked.setpoint.altitude = channels[6] * sensitivity.altitude;
-                                unlocked.controller_enable = channels[7] > 0.6;
+                                unlocked.controller_enable = channels[5] > 0.6;
                             }
                             Err(e) => match e {
                                 ParsingError::FailsChecksum => println!("invalid package"),
