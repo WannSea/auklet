@@ -17,7 +17,7 @@ impl RateRingBuffer {
 
     pub fn push(&mut self, duration: Duration) {
         self.buffer[self.index] = duration;
-        self.index = self.index + 1 % self.buffer.len();
+        self.index = self.index % self.buffer.len();
     }
 
     fn get_max_hz(&self) -> f64 {
