@@ -34,6 +34,7 @@ impl Log for Inputs {
 #[derive(Deserialize)]
 pub struct Receiver {
     sensitivity: State,
+    default_setpoint: State,
 
     #[serde(skip_deserializing)]
     pub inputs: Arc<Mutex<Inputs>>,
@@ -52,6 +53,8 @@ impl Receiver {
         let inputs = Arc::clone(&self.inputs);
         let sensitivity = self.sensitivity;
 
+        let default_setpoint = self.default_setpoint.clone();
+
         thread::spawn(move || {
             loop {
                 match port.read_exact(&mut buffer) {
@@ -63,12 +66,15 @@ impl Receiver {
                                     .get_all_channels()
                                     .map(|c| (c as f32 - 1500.0) / 500.0);
 
+                                let relative_setpoint = State {
+                                    roll: channels[0] * sensitivity.roll,
+                                    pitch: channels[1] * sensitivity.pitch,
+                                    yaw_rate: channels[3] * sensitivity.yaw_rate,
+                                    altitude: channels[6] * sensitivity.altitude,
+                                };
                                 let mut unlocked = inputs.lock().unwrap();
-                                unlocked.setpoint.roll = channels[0] * sensitivity.roll;
-                                unlocked.setpoint.pitch = channels[1] * sensitivity.pitch;
-                                unlocked.setpoint.yaw_rate = channels[3] * sensitivity.yaw_rate;
-                                unlocked.setpoint.altitude = channels[6] * sensitivity.altitude;
                                 unlocked.controller_enable = channels[5] > 0.6;
+                                unlocked.setpoint = default_setpoint + relative_setpoint;
                             }
                             Err(e) => match e {
                                 ParsingError::FailsChecksum => println!("invalid package"),
