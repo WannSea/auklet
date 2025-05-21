@@ -155,7 +155,6 @@ pub struct FlightController {
     yaw: Pid,
     altitude: Pid,
     mix_matrix: [[f32; 4]; 4],
-    default_setpoint: State,
 
     #[serde(skip_deserializing)]
     pub current_pid: Arc<Mutex<State>>,
@@ -168,20 +167,13 @@ impl FlightController {
         measurement: State,
         dt: f32,
     ) -> ControlAction {
-        let absolute_setpoint = self.default_setpoint + setpoint;
         let pid = State {
-            roll: self
-                .roll
-                .update(absolute_setpoint.roll, measurement.roll, dt),
-            pitch: self
-                .pitch
-                .update(absolute_setpoint.pitch, measurement.pitch, dt),
-            yaw_rate: self
-                .yaw
-                .update(absolute_setpoint.yaw_rate, measurement.yaw_rate, dt),
+            roll: self.roll.update(setpoint.roll, measurement.roll, dt),
+            pitch: self.pitch.update(setpoint.pitch, measurement.pitch, dt),
+            yaw_rate: self.yaw.update(setpoint.yaw_rate, measurement.yaw_rate, dt),
             altitude: self
                 .altitude
-                .update(absolute_setpoint.altitude, measurement.altitude, dt),
+                .update(setpoint.altitude, measurement.altitude, dt),
         };
         *self.current_pid.lock().unwrap() = pid;
 
