@@ -13,7 +13,7 @@ use influx::influx_log;
 use receiver::Receiver;
 use serde::Deserialize;
 use servo::Servo;
-use sonar::handle_sonar;
+use sonar::Sonar;
 
 use std::env;
 use std::sync::{Arc, Mutex};
@@ -44,6 +44,9 @@ fn main() -> () {
     let receiver: Receiver = config.receiver;
     receiver.run();
 
+    let sonar = Sonar::new();
+    sonar.run();
+
     let rate = Arc::new(Mutex::new(RateRingBuffer::new()));
 
     let measurement: Arc<Mutex<State>> = Arc::new(Mutex::new(State::default()));
@@ -58,11 +61,6 @@ fn main() -> () {
     let measurement_clone = measurement.clone();
     thread::spawn(move || {
         handle_imu(measurement_clone);
-    });
-
-    let measurement_clone2 = measurement.clone();
-    thread::spawn(move || {
-        handle_sonar(measurement_clone2);
     });
 
     influx_log(
@@ -106,6 +104,8 @@ fn main() -> () {
         let start = SystemTime::now();
         {
             let inputs = receiver.get_inputs();
+            // todo introduce filter dont just use port sonar
+            measurement.lock().unwrap().altitude = sonar.get_data().port;
             if inputs.controller_enable {
                 *action.lock().unwrap() = controller.update_controller(
                     inputs.setpoint,
