@@ -96,13 +96,14 @@ impl Sonar {
                     let distance_mm: u16 = u16::from_be_bytes([buffer[1], buffer[2]]);
                     let distance_m = distance_mm as f32 / 1000.0;
                     // TODO add outlier rejection based on delta
-                    match side {
-                        Side::PORT => data.lock().unwrap().port = distance_m,
-                        Side::STARBOARD => data.lock().unwrap().starboard = distance_m,
-                    }
                     {
-                        let delta = data.lock().unwrap().port - data.lock().unwrap().starboard;
-                        data.lock().unwrap().roll = f32::atan2(delta, SONAR_TO_SONAR_DISTANCE);
+                        let mut unlocked = data.lock().unwrap();
+                        match side {
+                            Side::PORT => unlocked.port = distance_m,
+                            Side::STARBOARD => unlocked.starboard = distance_m,
+                        }
+                        let delta = unlocked.port - unlocked.starboard;
+                        unlocked.roll = f32::atan2(delta, SONAR_TO_SONAR_DISTANCE);
                     }
                 } else {
                     let mut null = [0u8; 0];
