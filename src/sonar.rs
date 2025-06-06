@@ -58,8 +58,8 @@ pub struct Sonar {
 impl Sonar {
     pub fn new() -> Self {
         Sonar {
-            port_serial_port: String::from("/dev/ttyACM2"),
-            starboard_serial_port: String::from("/dev/ttyACM3"),
+            port_serial_port: String::from("/dev/ttyAMA2"),
+            starboard_serial_port: String::from("/dev/ttyAMA3"),
             measurement: Arc::new(Mutex::new(SonarData::default())),
         }
     }
