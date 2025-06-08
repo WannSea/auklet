@@ -24,7 +24,6 @@ struct Configuration {
     receiver: Receiver,
     trim: ControlAction,
     imu: IMUReader,
-    filter: Filter,
 }
 
 fn main() -> () {
@@ -54,7 +53,7 @@ fn main() -> () {
     let imu = config.imu;
     imu.run(measurements_tx.clone(), influx_tx.clone());
 
-    let filter: Filter = config.filter;
+    let filter: Filter = Filter {};
     filter.run(measurements_rx, state_estimation_tx, influx_tx.clone());
 
     let controller: FlightController = config.controller;
