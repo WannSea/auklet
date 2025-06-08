@@ -98,7 +98,7 @@ impl IMUReader {
         thread::spawn(move || loop {
             // initialize uncomplete measurement
             let mut current_measurement = IMUMeasurementMaybe {
-                acceleration: None,
+                acceleration: Some(Vector3::zeros()),
                 gyroscope: None,
                 compass: None,
                 orientation: None,
@@ -141,9 +141,9 @@ impl IMUReader {
                         driver
                             .enable_report(SENSOR_REPORTID_GYRO_CALIBRATED, interval, interval - 1)
                             .unwrap();
-                        driver
-                            .enable_report(SENSOR_REPORTID_ACCEL, interval, interval - 1)
-                            .unwrap();
+                        // driver
+                        //     .enable_report(SENSOR_REPORTID_ACCEL, interval, interval - 1)
+                        //     .unwrap();
                         driver
                             .enable_report(SENSOR_REPORTID_MAG_CALIBRATED, interval, interval - 1)
                             .unwrap();
