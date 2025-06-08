@@ -14,7 +14,8 @@ receiver:
     pitch: 3.0
     yaw_rate: 0.0
     altitude: 0.3
-logging_interval_ms: 250
+imu:
+  interval_ms: 20
 controller:
   roll:
     p: 0.07
