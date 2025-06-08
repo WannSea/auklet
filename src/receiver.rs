@@ -2,8 +2,8 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-use crate::control::State;
-use crate::influx::{Log, Measurement};
+use crate::control::ConrollerState;
+use crate::influx::Log;
 use parse_rc_ibus::{IbusPacket, ParsingError};
 use serde::Deserialize;
 use serialport;
@@ -12,29 +12,29 @@ use serialport;
 
 #[derive(Clone, Copy)]
 pub struct Inputs {
-    pub setpoint: State,
+    pub setpoint: ConrollerState,
     pub controller_enable: bool,
 }
 
 impl Default for Inputs {
     fn default() -> Self {
         Self {
-            setpoint: State::default(),
+            setpoint: ConrollerState::default(),
             controller_enable: false,
         }
     }
 }
 
 impl Log for Inputs {
-    fn measurements(&self) -> Vec<Measurement> {
+    fn measurements(&self) -> Vec<(String, f32)> {
         self.setpoint.measurements()
     }
 }
 
 #[derive(Deserialize)]
 pub struct Receiver {
-    sensitivity: State,
-    default_setpoint: State,
+    sensitivity: ConrollerState,
+    default_setpoint: ConrollerState,
 
     #[serde(skip_deserializing)]
     pub inputs: Arc<Mutex<Inputs>>,
@@ -66,7 +66,7 @@ impl Receiver {
                                     .get_all_channels()
                                     .map(|c| (c as f32 - 1500.0) / 500.0);
 
-                                let relative_setpoint = State {
+                                let relative_setpoint = ConrollerState {
                                     roll: channels[0] * sensitivity.roll,
                                     pitch: channels[1] * sensitivity.pitch,
                                     yaw_rate: channels[3] * sensitivity.yaw_rate,
@@ -89,9 +89,5 @@ impl Receiver {
                 }
             }
         });
-    }
-
-    pub fn get_inputs(&self) -> Inputs {
-        *self.inputs.lock().unwrap()
     }
 }

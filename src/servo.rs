@@ -1,9 +1,5 @@
 use rppal::pwm::{Channel, Pwm};
-use std::{
-    f32::{consts::PI, INFINITY},
-    thread::sleep,
-    time::Duration,
-};
+use std::{f32, time::Duration};
 
 /// Represents a servo connected to one of the Pi's PWM channels.
 pub struct Servo {

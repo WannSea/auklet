@@ -1,35 +1,33 @@
 mod control;
-mod helpers;
+mod estimator;
 mod imu;
 mod influx;
 mod receiver;
 mod servo;
 mod sonar;
 
-use control::{ControlAction, FlightController, State};
-use helpers::RateRingBuffer;
-use imu::handle_imu;
-use influx::influx_log;
+use control::{ControlAction, FlightController};
+use estimator::Filter;
+use imu::IMUReader;
+use influx::InfluxHandler;
 use receiver::Receiver;
 use serde::Deserialize;
 use servo::Servo;
 use sonar::Sonar;
 
 use std::env;
-use std::sync::{Arc, Mutex};
-use std::thread::{self, sleep};
-use std::time::{Duration, SystemTime};
+use std::sync::mpsc::{channel, sync_channel};
 
 #[derive(Deserialize)]
 struct Configuration {
     controller: FlightController,
     receiver: Receiver,
     trim: ControlAction,
-    logging_interval_ms: u64,
+    imu: IMUReader,
+    filter: Filter,
 }
 
 fn main() -> () {
-    println!("Version 0.1");
     let yaml_path = match env::var("CONFIG_PATH") {
         Ok(path) => path,
         Err(_) => String::from("config.yaml"),
@@ -39,54 +37,32 @@ fn main() -> () {
 
     let config: Configuration = serde_yaml::from_str(&yaml_str).unwrap();
 
-    let mut controller: FlightController = config.controller;
+    let (influx_tx, influx_rx) = sync_channel(2000);
+    let (measurements_tx, measurements_rx) = channel();
+    let (state_estimation_tx, state_estimation_rx) = channel();
+    let (controls_tx, controls_rx) = channel();
+
+    let influx = InfluxHandler {};
+    influx.run(influx_rx);
 
     let receiver: Receiver = config.receiver;
     receiver.run();
 
-    let sonar = Sonar::new();
-    sonar.run();
+    let sonar: Sonar = Sonar::new();
+    sonar.run(measurements_tx.clone(), influx_tx.clone());
 
-    let rate = Arc::new(Mutex::new(RateRingBuffer::new()));
+    let imu = config.imu;
+    imu.run(measurements_tx.clone(), influx_tx.clone());
 
-    let measurement: Arc<Mutex<State>> = Arc::new(Mutex::new(State::default()));
+    let filter: Filter = config.filter;
+    filter.run(measurements_rx, state_estimation_tx, influx_tx.clone());
 
-    let action: Arc<Mutex<ControlAction>> = Arc::new(Mutex::new(ControlAction {
-        port: 0.0,
-        starboard: 0.0,
-        aft: 0.0,
-        rudder: 0.0,
-    }));
-
-    let measurement_clone = measurement.clone();
-    thread::spawn(move || {
-        handle_imu(measurement_clone);
-    });
-
-    influx_log(
-        receiver.inputs.clone(),
-        "setpoint".to_string(),
-        Duration::from_millis(config.logging_interval_ms),
-    );
-    influx_log(
-        measurement.clone(),
-        "measurement".to_string(),
-        Duration::from_millis(config.logging_interval_ms),
-    );
-    influx_log(
-        action.clone(),
-        "action".to_string(),
-        Duration::from_millis(config.logging_interval_ms),
-    );
-    influx_log(
-        controller.current_pid.clone(),
-        "pid".to_string(),
-        Duration::from_millis(config.logging_interval_ms),
-    );
-    influx_log(
-        rate.clone(),
-        "pid_rate".to_string(),
-        Duration::from_millis(config.logging_interval_ms),
+    let controller: FlightController = config.controller;
+    controller.run(
+        state_estimation_rx,
+        controls_tx,
+        influx_tx.clone(),
+        receiver.inputs,
     );
 
     let mut port_servo = Servo::new(rppal::pwm::Channel::Pwm2, config.trim.port, -13.0, 13.0);
@@ -99,38 +75,12 @@ fn main() -> () {
     let mut aft_servo = Servo::new(rppal::pwm::Channel::Pwm1, config.trim.aft, -13.0, 13.0);
     let mut rudder_servo = Servo::new(rppal::pwm::Channel::Pwm3, config.trim.rudder, -135.0, 135.0);
 
-    let control_rate = Duration::from_millis(10);
+    // write actions
     loop {
-        let start = SystemTime::now();
-        {
-            let inputs = receiver.get_inputs();
-            // todo introduce filter dont just use port sonar
-            measurement.lock().unwrap().altitude = sonar.get_data().port;
-            if inputs.controller_enable {
-                *action.lock().unwrap() = controller.update_controller(
-                    inputs.setpoint,
-                    *measurement.lock().unwrap(),
-                    control_rate.as_secs_f32(),
-                );
-            } else {
-                *action.lock().unwrap() = ControlAction::default();
-                controller.reset();
-            }
-        }
-        {
-            let unlocked_action = action.lock().unwrap();
-            port_servo.set_angle(unlocked_action.port);
-            starboard_servo.set_angle(unlocked_action.starboard);
-            aft_servo.set_angle(unlocked_action.aft);
-            rudder_servo.set_angle(unlocked_action.rudder * 3.0); // the servo has a gear ratio of 3
-        }
-        match control_rate.checked_sub(SystemTime::now().duration_since(start).unwrap()) {
-            Some(sleep_time) => sleep(sleep_time),
-            None => println!("Wir sind am Arsch!"),
-        }
-        {
-            let mut rate_unlocked = rate.lock().unwrap();
-            rate_unlocked.push(SystemTime::now().duration_since(start).unwrap());
-        }
+        let control_action = controls_rx.recv().unwrap();
+        port_servo.set_angle(control_action.port);
+        starboard_servo.set_angle(control_action.starboard);
+        aft_servo.set_angle(control_action.aft);
+        rudder_servo.set_angle(control_action.rudder * 3.0); // the servo has a gear ratio of 3
     }
 }

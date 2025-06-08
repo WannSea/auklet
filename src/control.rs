@@ -1,8 +1,17 @@
-use crate::influx::{Log, Measurement};
+use crate::{
+    estimator::State,
+    influx::{DataPoint, Log},
+    receiver::Inputs,
+};
 use serde::Deserialize;
 use std::{
     ops::Add,
-    sync::{Arc, Mutex},
+    sync::{
+        mpsc::{Receiver, Sender, SyncSender},
+        Arc, Mutex,
+    },
+    thread,
+    time::SystemTime,
 };
 
 #[derive(Deserialize, Debug)]
@@ -34,7 +43,7 @@ impl Pid {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct ControlAction {
     pub port: f32,
     pub starboard: f32,
@@ -54,24 +63,12 @@ impl Default for ControlAction {
 }
 
 impl Log for ControlAction {
-    fn measurements(&self) -> Vec<crate::influx::Measurement> {
+    fn measurements(&self) -> Vec<(String, f32)> {
         vec![
-            Measurement {
-                name: "Port",
-                value: self.port,
-            },
-            Measurement {
-                name: "Starboard",
-                value: self.starboard,
-            },
-            Measurement {
-                name: "Aft",
-                value: self.aft,
-            },
-            Measurement {
-                name: "Rudder",
-                value: self.rudder,
-            },
+            ("Port".to_owned(), self.port),
+            ("Starboard".to_owned(), self.starboard),
+            ("Aft".to_owned(), self.aft),
+            ("Rudder".to_owned(), self.rudder),
         ]
     }
 }
@@ -88,14 +85,14 @@ impl From<[f32; 4]> for ControlAction {
 }
 
 #[derive(Debug, Clone, Copy, Deserialize)]
-pub struct State {
+pub struct ConrollerState {
     pub roll: f32,
     pub pitch: f32,
     pub yaw_rate: f32,
     pub altitude: f32,
 }
 
-impl Default for State {
+impl Default for ConrollerState {
     fn default() -> Self {
         Self {
             roll: 0.0,
@@ -106,7 +103,7 @@ impl Default for State {
     }
 }
 
-impl Add for State {
+impl Add for ConrollerState {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
@@ -119,31 +116,19 @@ impl Add for State {
     }
 }
 
-impl Log for State {
-    fn measurements(&self) -> Vec<crate::influx::Measurement> {
+impl Log for ConrollerState {
+    fn measurements(&self) -> Vec<(String, f32)> {
         vec![
-            Measurement {
-                name: "Roll",
-                value: self.roll,
-            },
-            Measurement {
-                name: "Pitch",
-                value: self.pitch,
-            },
-            Measurement {
-                name: "Yaw_Rate",
-                value: self.yaw_rate,
-            },
-            Measurement {
-                name: "altitude",
-                value: self.altitude,
-            },
+            ("Roll".to_owned(), self.roll),
+            ("Pitch".to_owned(), self.pitch),
+            ("Yaw_Rate".to_owned(), self.yaw_rate),
+            ("altitude".to_owned(), self.altitude),
         ]
     }
 }
 
-impl From<State> for [f32; 4] {
-    fn from(state: State) -> Self {
+impl From<ConrollerState> for [f32; 4] {
+    fn from(state: ConrollerState) -> Self {
         [state.roll, state.pitch, state.yaw_rate, state.altitude]
     }
 }
@@ -155,36 +140,82 @@ pub struct FlightController {
     yaw: Pid,
     altitude: Pid,
     mix_matrix: [[f32; 4]; 4],
-
-    #[serde(skip_deserializing)]
-    pub current_pid: Arc<Mutex<State>>,
 }
 
 impl FlightController {
-    pub fn update_controller(
-        &mut self,
-        setpoint: State,
-        measurement: State,
-        dt: f32,
-    ) -> ControlAction {
-        let pid = State {
-            roll: self.roll.update(setpoint.roll, measurement.roll, dt),
-            pitch: self.pitch.update(setpoint.pitch, measurement.pitch, dt),
-            yaw_rate: self.yaw.update(setpoint.yaw_rate, measurement.yaw_rate, dt),
-            altitude: self
-                .altitude
-                .update(setpoint.altitude, measurement.altitude, dt),
-        };
-        *self.current_pid.lock().unwrap() = pid;
+    pub fn run(
+        mut self,
+        state_estimation_rx: Receiver<State>,
+        controls_tx: Sender<ControlAction>,
+        influx_tx: SyncSender<DataPoint>,
+        input: Arc<Mutex<Inputs>>,
+    ) {
+        let mut last_update = SystemTime::now();
+        thread::spawn(move || -> ! {
+            loop {
+                // wait for new state estimation
+                let state = state_estimation_rx.recv().unwrap();
+                let dt = SystemTime::now()
+                    .duration_since(last_update)
+                    .unwrap()
+                    .as_secs_f32();
+                influx_tx
+                    .send(DataPoint::new_single(
+                        "pid_rate".to_owned(),
+                        "rate_ms".to_owned(),
+                        dt * 1000.0,
+                    ))
+                    .unwrap();
+                let (roll, pitch, _yaw) = state.orientation.euler_angles();
 
-        let mut action = [0.0; 4];
-        let pid_array: [f32; 4] = pid.into();
-        for i in 0..4 {
-            for j in 0..4 {
-                action[i] += self.mix_matrix[i][j] * pid_array[j];
+                {
+                    // get the most recent setpoint
+                    let input = input.lock().unwrap();
+
+                    let action: ControlAction = if input.controller_enable {
+                        // calculate pids
+                        let pid = ConrollerState {
+                            roll: self.roll.update(input.setpoint.roll, roll, dt),
+                            pitch: self.pitch.update(input.setpoint.pitch, pitch, dt),
+                            yaw_rate: self.yaw.update(
+                                input.setpoint.yaw_rate,
+                                state.angular_vel[2],
+                                dt,
+                            ),
+                            altitude: self.altitude.update(
+                                input.setpoint.altitude,
+                                state.position[2],
+                                dt,
+                            ),
+                        };
+
+                        influx_tx
+                            .send(DataPoint::new("pid".to_owned(), pid))
+                            .unwrap();
+
+                        // apply mixing
+                        let mut action = [0.0; 4];
+                        let pid_array: [f32; 4] = pid.into();
+                        for i in 0..4 {
+                            for j in 0..4 {
+                                action[i] += self.mix_matrix[i][j] * pid_array[j];
+                            }
+                        }
+                        action.into()
+                    } else {
+                        self.reset();
+                        ControlAction::default()
+                    };
+
+                    controls_tx.send(action.clone()).unwrap();
+                    influx_tx
+                        .send(DataPoint::new("action".to_owned(), action))
+                        .unwrap();
+
+                    last_update = SystemTime::now();
+                }
             }
-        }
-        action.into()
+        });
     }
 
     pub fn reset(&mut self) {

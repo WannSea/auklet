@@ -1,65 +1,87 @@
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use std::env;
-use std::sync::{Arc, Mutex};
-use std::thread::{self, sleep};
-use std::time::Duration;
+use std::sync::mpsc::Receiver;
+use std::thread;
 
-/// Represents a single measurement for InfluxDB (name + value)
-pub struct Measurement {
-    pub name: &'static str,
-    pub value: f32,
+pub struct DataPoint {
+    name: String,
+    timestamp: DateTime<Utc>,
+    data: Vec<(String, f32)>,
 }
 
-pub trait Log: Send + Sync + 'static {
-    /// Returns all measurements this struct represents
-    fn measurements(&self) -> Vec<Measurement>;
+impl DataPoint {
+    pub fn new(name: String, data: impl Log) -> Self {
+        Self {
+            name,
+            timestamp: Utc::now(),
+            data: data.measurements(),
+        }
+    }
 
-    /// Generates InfluxDB line protocol strings
-    fn to_line_protocol(&self, measurment: &String) -> String {
-        let timestamp = Utc::now().timestamp_nanos_opt().unwrap();
-        let data: String = self
-            .measurements()
+    pub fn new_single(name: String, field: String, value: f32) -> Self {
+        Self {
+            name,
+            timestamp: Utc::now(),
+            data: vec![(field, value)],
+        }
+    }
+
+    pub fn to_influx_post(self) -> String {
+        let string_data: String = self
+            .data
             .into_iter()
-            .map(|m| format!("{}={}", m.name, m.value))
+            .map(|(name, value)| format!("{}={}", name, value))
             .collect::<Vec<String>>()
             .join(",");
-        format!("{} {} {}", measurment, data, timestamp)
+
+        format!(
+            "{} {} {}",
+            self.name,
+            string_data,
+            self.timestamp.timestamp_nanos_opt().unwrap()
+        )
     }
 }
 
-pub fn influx_log<T: Log>(shared: Arc<Mutex<T>>, measurement: String, interval: Duration) {
-    let influx_url = env::var("INFLUX_URL").expect("no url provided");
-    let influx_bucket = env::var("INFLUX_BUCKET").expect("no bucket provided");
-    let influx_token = env::var("INFLUX_TOKEN").expect("no token provided");
+pub trait Log {
+    fn measurements(&self) -> Vec<(String, f32)>;
+}
 
-    let url = format!("{influx_url}/api/v2/write?org=wannsea&bucket={influx_bucket}&precision=ns");
+pub struct InfluxHandler {}
 
-    thread::spawn(move || loop {
-        let line = {
-            let data = shared.lock().unwrap();
-            data.to_line_protocol(&measurement)
-        };
+impl InfluxHandler {
+    pub fn run(self, influx_rx: Receiver<DataPoint>) {
+        let influx_url = env::var("INFLUX_URL").expect("no url provided");
+        let influx_bucket = env::var("INFLUX_BUCKET").expect("no bucket provided");
+        let influx_token = env::var("INFLUX_TOKEN").expect("no token provided");
+        let url =
+            format!("{influx_url}/api/v2/write?org=wannsea&bucket={influx_bucket}&precision=ns");
 
-        let response = ureq::post(&url)
-            .header("Authorization", format!("Token {influx_token}"))
-            .header("Content-Type", "text/plain; charset=utf-8")
-            .header("Accept", "application/json")
-            .send(&line);
+        // maybe add aggregation to not ddos the influxdb
+        thread::spawn(move || loop {
+            let data_point = influx_rx.recv().unwrap();
+            let line = data_point.to_influx_post();
 
-        match response {
-            Ok(resp) if resp.status() == 204 => {
-                //  println!("[Influx] Logged: {}", line);
+            let response = ureq::post(&url)
+                .header("Authorization", format!("Token {influx_token}"))
+                .header("Content-Type", "text/plain; charset=utf-8")
+                .header("Accept", "application/json")
+                .send(&line);
+
+            match response {
+                Ok(resp) if resp.status() == 204 => {
+                    //  println!("[Influx] Logged: {}", line);
+                }
+                Ok(resp) => {
+                    eprintln!("[Influx] Error {}: {} \n url:{}", resp.status(), line, url);
+                }
+                Err(e) => {
+                    eprintln!(
+                        "[Influx] Network error: {:?} \n url:{} \n line:{}",
+                        e, url, line
+                    );
+                }
             }
-            Ok(resp) => {
-                eprintln!("[Influx] Error {}: {} \n url:{}", resp.status(), line, url);
-            }
-            Err(e) => {
-                eprintln!(
-                    "[Influx] Network error: {:?} \n url:{} \n line:{}",
-                    e, url, line
-                );
-            }
-        }
-        sleep(interval);
-    });
+        });
+    }
 }
