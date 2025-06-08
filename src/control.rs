@@ -5,6 +5,7 @@ use crate::{
 };
 use serde::Deserialize;
 use std::{
+    f32::consts::PI,
     ops::Add,
     sync::{
         mpsc::{Receiver, Sender, SyncSender},
@@ -175,10 +176,12 @@ impl FlightController {
                     let action: ControlAction = if input.controller_enable {
                         // calculate pids
                         let pid = ConrollerState {
-                            roll: self.roll.update(input.setpoint.roll, roll, dt),
-                            pitch: self.pitch.update(input.setpoint.pitch, pitch, dt),
+                            roll: self.roll.update(input.setpoint.roll, roll / PI * 180.0, dt),
+                            pitch: self
+                                .pitch
+                                .update(input.setpoint.pitch, pitch / PI * 180.0, dt),
                             yaw_rate: self.yaw.update(
-                                input.setpoint.yaw_rate,
+                                input.setpoint.yaw_rate / PI * 180.0,
                                 state.angular_vel[2],
                                 dt,
                             ),
